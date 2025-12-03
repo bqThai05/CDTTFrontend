@@ -1,0 +1,36 @@
+/* Áp dụng cho Menu khi đang ở trong Kênh */
+.ant-menu-vertical .ant-menu-item {
+    height: 45px !important;        /* Chiều cao cố định cho đẹp */
+    margin: 4px 10px !important;    /* Cách lề 2 bên 1 chút */
+    border-radius: 6px;             /* Bo góc nút bấm */
+    padding-left: 15px !important;  /* Căn lề trái */
+    
+    /* QUAN TRỌNG: Căn chỉnh hàng ngang */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important; 
+}
+
+/* Phần chữ trong menu */
+.ant-menu-vertical .ant-menu-item .ant-menu-title-content {
+    margin-left: 12px !important;   /* Khoảng cách giữa Icon và Chữ */
+    font-size: 13px;
+    text-align: left !important;    /* Chữ căn trái */
+    flex: 1;                        /* Chữ chiếm phần còn lại */
+    white-space: nowrap;            /* Không xuống dòng */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Phần Icon */
+.ant-menu-vertical .anticon {
+    font-size: 18px !important;     /* Kích thước icon chuẩn */
+    min-width: 18px;
+}
+
+/* Màu nền khi được chọn (Active) */
+.ant-menu-dark .ant-menu-item-selected {
+    background-color: #1890ff !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3); /* Bóng đổ nhẹ cho đẹp */
+}
