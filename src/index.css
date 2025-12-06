@@ -1,0 +1,28 @@
+/* File: src/index.css */
+
+/* 1. Xóa mọi khoảng cách mặc định của trình duyệt */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 2. Thiết lập cho thẻ body và html full màn hình */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3. Sửa lỗi cuộn trang không mong muốn */
+#root {
+  display: flex;
+  flex-direction: column;
+}
