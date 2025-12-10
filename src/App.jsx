@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'; 
 import Login from './pages/Login';
 import Register from './pages/Register'; // <--- Import Register
 import Dashboard from './pages/Dashboard';
@@ -7,10 +7,11 @@ import CreatePost from './pages/CreatePost';
 import PostHistory from './pages/PostHistory';
 import Accounts from './pages/Accounts';
 import MainLayout from './components/MainLayout';
+import ChannelContent from './pages/ChannelContent';
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         
@@ -24,10 +25,11 @@ function App() {
           <Route path="create-post" element={<CreatePost />} />
           <Route path="accounts" element={<Accounts />} />
           <Route path="feed" element={<PostHistory />} />
+          <Route path="content" element={<ChannelContent />} />
           {/* ... các route khác */}
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

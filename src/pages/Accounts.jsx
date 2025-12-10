@@ -125,8 +125,8 @@ const Accounts = () => {
                     ]}
                   >
                     <List.Item.Meta
-                      avatar={<Avatar src={item.avatar_url} icon={getIcon(item.platform)} size="large" />} // Backend cần trả về avatar_url hoặc dùng icon mặc định
-                      title={<span style={{ fontWeight: 'bold' }}>{item.social_id}</span>} // Hoặc item.channel_name
+                      avatar={<Avatar src={item.avatar_url} icon={getIcon(item.platform)} size="large" />}
+                    title={<span style={{ fontWeight: 'bold' }}>{item.username || item.social_id}</span>} 
                       description={
                         <div>
                           <Tag color="blue">{item.platform.toUpperCase()}</Tag>
