@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+
 import { Button, Table, message, Popconfirm, Modal, Form, Input, Space, Typography } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, RocketOutlined } from '@ant-design/icons';
 import {
@@ -37,12 +38,18 @@ const WorkspacePosts = ({ workspaceId }) => {
   }, [fetchPosts]);
 
   const showModal = (post = null) => {
-    setEditingPost(post);
     setIsModalVisible(true);
-    // Defer setting fields to allow the modal and form to render and connect
-    setTimeout(() => {
-      form.setFieldsValue(post || { title: '', content: '' });
-    }, 0);
+    if (post) {
+      setTimeout(() => {
+        form.setFieldsValue(post);
+        setEditingPost(post);
+      }, 0);
+    } else {
+      setTimeout(() => {
+        form.resetFields();
+        setEditingPost(null);
+      }, 0);
+    }
   };
   const handleCancel = () => {
     setIsModalVisible(false);
