@@ -22,8 +22,12 @@ const Accounts = () => {
     try {
       // Gọi API lấy danh sách tài khoản YouTube (Dựa trên code backend bạn cung cấp)
       // Nếu bạn muốn lấy cả FB, cần đảm bảo Backend có API tương ứng hoặc gộp chung
-      const res = await api.get('/youtube/accounts'); 
-      setAccounts(res.data);
+      const [youtubeRes, facebookRes] = await Promise.all([
+        api.get('/youtube/accounts'),
+        api.get('/facebook/pages')
+      ]);
+      const combinedAccounts = [...youtubeRes.data, ...facebookRes.data];
+      setAccounts(combinedAccounts);
     } catch (error) {
       console.error("Lỗi tải danh sách tài khoản:", error);
       // Không show error message quá gắt để tránh spam khi chưa có acc nào

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Button, Space, Spin, Avatar, Typography, Tooltip } from 'antd';
 import { 
   AppstoreOutlined, UserOutlined, YoutubeFilled, EditOutlined, CalendarOutlined, PlusCircleOutlined,
-  ArrowLeftOutlined, DashboardOutlined, VideoCameraOutlined, BarChartOutlined, LogoutOutlined
+  ArrowLeftOutlined, DashboardOutlined, VideoCameraOutlined, BarChartOutlined, LogoutOutlined, TeamOutlined
 } from '@ant-design/icons';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import api from '../services/api';
@@ -57,6 +57,7 @@ const MainLayout = () => {
         if (path === '/create-post') return 'create_global';
         if (path === '/feed') return 'feed';
         if (path === '/accounts') return 'accounts';
+        if (path.startsWith('/workspaces')) return 'workspaces';
         // Mặc định
         return 'dashboard';
     }
@@ -68,6 +69,7 @@ const MainLayout = () => {
     { key: 'dashboard', icon: <AppstoreOutlined />, label: 'Tổng quan hệ thống' },
     { key: 'feed', icon: <CalendarOutlined />, label: 'Lịch sử bài đăng' },
     { key: 'accounts', icon: <UserOutlined />, label: 'Quản lý Tài khoản' },
+    { key: 'workspaces', icon: <TeamOutlined />, label: 'Workspaces' },
     { type: 'divider' },
     { 
         key: 'grp_channels', 
@@ -106,6 +108,7 @@ const MainLayout = () => {
         if (key === 'dashboard') navigate('/dashboard');
         if (key === 'feed') navigate('/feed');
         if (key === 'accounts' || key === 'add_new') navigate('/accounts');
+        if (key === 'workspaces') navigate('/workspaces');
     } else {
         if (key === 'channel_dashboard') navigate('/dashboard');
         if (key === 'channel_content') navigate('/content');

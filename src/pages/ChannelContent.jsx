@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Card, Button, Image, Tag, Typography, Space, Tooltip } from 'antd';
 import { 
   EyeOutlined, LikeOutlined, MessageOutlined, 
@@ -14,17 +14,19 @@ const ChannelContent = () => {
   const [loading, setLoading] = useState(false);
   const [videos, setVideos] = useState([]);
 
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async () => {
     if (!selectedChannel) return;
     setLoading(true);
     try {
-      const res = await api.get(`/youtube/${selectedChannel.id}/videos`);
+      const res = await api.get(`/youtube/channels/${selectedChannel.id}/videos`);
       setVideos(res.data);
     } catch (error) { console.error(error); } 
     finally { setLoading(false); }
-  };
+  }, [selectedChannel]);
 
-  useEffect(() => { fetchVideos(); }, [selectedChannel]);
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos, selectedChannel]);
 
   // Cấu hình bảng giống YouTube Studio
   const columns = [
