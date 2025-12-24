@@ -1,128 +1,91 @@
+// src/pages/Dashboard.jsx
 import React from 'react';
-import { Card, Row, Col, Statistic, Table, Tag, Progress, Typography } from 'antd';
-import { ArrowUpOutlined, PlayCircleOutlined, EyeOutlined, LikeOutlined } from '@ant-design/icons';
-import { useOutletContext } from 'react-router-dom';
+import { Card, Row, Col, Statistic, Table, Tag } from 'antd';
+import { ArrowUpOutlined, ArrowDownOutlined, EyeOutlined, LikeOutlined } from '@ant-design/icons';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const { Title, Text } = Typography;
+// Dữ liệu giả lập (Sau này thay bằng data gọi từ API)
+const dataChart = [
+  { name: 'T2', views: 4000 },
+  { name: 'T3', views: 3000 },
+  { name: 'T4', views: 2000 },
+  { name: 'T5', views: 2780 },
+  { name: 'T6', views: 1890 },
+  { name: 'T7', views: 2390 },
+  { name: 'CN', views: 3490 },
+];
+
+const columns = [
+  { title: 'Chiến dịch', dataIndex: 'name', key: 'name' },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', render: text => <Tag color="green">{text}</Tag> },
+  { title: 'Tương tác', dataIndex: 'engagement', key: 'engagement' },
+];
+
+const dataTable = [
+  { key: '1', name: 'Post Khuyến mãi Tết', status: 'Đã đăng', engagement: '1.2k' },
+  { key: '2', name: 'Video giới thiệu SP', status: 'Đã đăng', engagement: '850' },
+  { key: '3', name: 'Giveaway Fanpage', status: 'Đang chạy', engagement: '3.4k' },
+];
 
 const Dashboard = () => {
-  // Lấy thông tin kênh đang chọn từ MainLayout
-  const [selectedChannel] = useOutletContext();
-
-  // Dữ liệu giả lập (Demo) - Khi nào muốn xịn thì gọi API thay vào
-  const stats = {
-     views: selectedChannel?.statistics?.viewCount || 0,
-    subs: selectedChannel?.statistics?.subscriberCount || 0,
-    posts: selectedChannel?.statistics?.videoCount || 0,
-    growth: 0
-  };
-
-    const demoVideos = [
-    { key: 'demo1', title: 'Review iPhone 16 Pro Max (Demo)', views: 12000, likes: 500, status: 'published' },
-    { key: 'demo2', title: 'Vlog đi Đà Lạt (Demo)', views: 3400, likes: 120, status: 'published' }
-  ];
-
-  // Nếu API trả về video thật thì dùng, nếu không (hoặc mảng rỗng) thì dùng Demo
-  const recentVideos = (selectedChannel?.recent_videos && selectedChannel.recent_videos.length > 0) 
-      ? selectedChannel.recent_videos 
-      : demoVideos;
-      
-  const columns = [
-    { title: 'Tiêu đề video', dataIndex: 'title', key: 'title', render: text => <b>{text}</b> },
-    { title: 'Views', dataIndex: 'views', key: 'views' },
-    { title: 'Likes', dataIndex: 'likes', key: 'likes' },
-    { title: 'Trạng thái', dataIndex: 'status', key: 'status', render: status => (
-        status === 'published' ? <Tag color="success">Đã đăng</Tag> : <Tag color="warning">Đang xử lý</Tag>
-    )}
-  ];
-
   return (
-    <div className="dashboard-container">
-      {/* 1. Phần tiêu đề */}
-      <div style={{ marginBottom: 24 }}>
-        <Title level={4}>
-            {selectedChannel 
-                ? `Thống kê kênh: ${selectedChannel.username || selectedChannel.social_id}` 
-                : 'Tổng quan toàn hệ thống'}
-        </Title>
-      </div>
-
-      {/* 2. Các thẻ thống kê (4 ô trên cùng) */}
-      <Row gutter={[16, 16]}>
+    <div>
+      <h2 style={{ marginBottom: 20, fontSize: 24 }}>Tổng quan kênh</h2>
+      
+      {/* 1. Phần Thống kê nhanh (Stats) */}
+      <Row gutter={16}>
         <Col span={6}>
-          <Card bordered={false}>
+          <Card bordered={false} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <Statistic 
-                title="Tổng lượt xem" 
-                value={stats.views} 
-                prefix={<PlayCircleOutlined style={{color: '#1890ff'}}/>} 
+              title="Tổng lượt xem (Views)" 
+              value={112893} 
+              precision={0} 
+              valueStyle={{ color: '#3f8600' }}
+              prefix={<EyeOutlined />}
+              suffix="+"
             />
+             <div style={{ color: 'green', marginTop: 10 }}><ArrowUpOutlined /> 12% so với tuần trước</div>
           </Card>
         </Col>
         <Col span={6}>
-          <Card bordered={false}>
+          <Card bordered={false} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <Statistic 
-                title="Người theo dõi" 
-                value={stats.subs} 
-                prefix={<YoutubeFilled style={{color: '#ff0000'}}/>} 
+              title="Tổng tương tác" 
+              value={9300} 
+              valueStyle={{ color: '#cf1322' }}
+              prefix={<LikeOutlined />}
             />
+            <div style={{ color: 'red', marginTop: 10 }}><ArrowDownOutlined /> 5% so với tuần trước</div>
           </Card>
         </Col>
-        <Col span={6}>
-          <Card bordered={false}>
-            <Statistic title="Bài viết tháng này" value={stats.posts} suffix="/ 150" />
-            <Progress percent={70} showInfo={false} size="small" strokeColor="#1890ff" />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card bordered={false}>
-            <Statistic 
-                title="Tăng trưởng" 
-                value={stats.growth} 
-                precision={2} 
-                valueStyle={{ color: '#3f8600' }} 
-                prefix={<ArrowUpOutlined />} 
-                suffix="%" 
-            />
-            <Text type="secondary" style={{fontSize: 12}}>So với tháng trước</Text>
-          </Card>
+        <Col span={12}>
+           {/* Biểu đồ nằm ngay cạnh */}
+           <Card title="Hiệu suất 7 ngày qua" bordered={false} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <div style={{ width: '100%', height: 150 }}>
+                <ResponsiveContainer>
+                  <AreaChart data={dataChart}>
+                    <defs>
+                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#1677ff" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#1677ff" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <Tooltip />
+                    <Area type="monotone" dataKey="views" stroke="#1677ff" fillOpacity={1} fill="url(#colorViews)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+           </Card>
         </Col>
       </Row>
 
-      {/* 3. Phần Bảng hoạt động và Biểu đồ tròn (Dưới) */}
-      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-        {/* Bảng bên trái */}
-        <Col span={16}>
-          <Card title="Hoạt động gần đây" bordered={false}>
-            <Table 
-                dataSource={recentVideos} 
-                columns={columns} 
-                pagination={false} 
-                size="small"
-            />
-          </Card>
-        </Col>
-
-        {/* Biểu đồ tròn bên phải */}
-        <Col span={8}>
-          <Card title="Chất lượng nội dung" bordered={false} style={{ textAlign: 'center', height: '100%' }}>
-            <Progress 
-                type="circle" 
-                percent={85} 
-                format={() => <span style={{color: '#1890ff', fontSize: 24}}>Tốt</span>} 
-                width={120}
-                strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
-            />
-            <div style={{ marginTop: 16 }}>
-                <Text>Điểm SEO trung bình</Text>
-            </div>
-          </Card>
-        </Col>
-      </Row>
+      {/* 2. Phần Danh sách bài đăng gần đây */}
+      <h3 style={{ marginTop: 30 }}>Bài đăng gần đây</h3>
+      <Card bordered={false} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+         <Table columns={columns} dataSource={dataTable} pagination={false} />
+      </Card>
     </div>
   );
 };
-
-// Cần import YoutubeFilled ở đầu file (em thêm ở trên rồi nhưng nhắc lại cho chắc)
-import { YoutubeFilled } from '@ant-design/icons';
 
 export default Dashboard;
