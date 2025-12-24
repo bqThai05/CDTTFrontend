@@ -4,7 +4,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom'; // <--- Thêm Link
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:8000/api/v1';
+const API_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const Login = () => {
 
     try {
       const formData = new URLSearchParams();
-      formData.append('username', values.email); 
+      formData.append('username', values.email);
       formData.append('password', values.password);
 
       const response = await axios.post(`${API_URL}/auth/login`, formData, {
@@ -26,7 +26,7 @@ const Login = () => {
 
       const { access_token } = response.data;
       localStorage.setItem('access_token', access_token);
-      
+
       message.success('Đăng nhập thành công!');
       navigate('/dashboard');
 
@@ -43,14 +43,20 @@ const Login = () => {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', 
-      background: 'linear-gradient(135deg, #001529 0%, #00417a 100%)' 
+    <div style={{
+      display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh',
+      background: 'linear-gradient(135deg, #001529 0%, #00417a 100%)'
     }}>
-      <Card 
-        title={<div style={{textAlign: 'center', fontSize: 20, fontWeight: 'bold'}}>SOCIAL PRO ADMIN</div>} 
+      <Card
+        title={<div style={{ textAlign: 'center', fontSize: 20, fontWeight: 'bold' }}>SOCIAL PRO ADMIN</div>}
         style={{ width: 400, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
       >
+        <Alert
+          message="Lưu ý: Bạn đã có thể tạo tài khoản và đăng nhập."
+          type="info"
+          showIcon
+          style={{ marginBottom: 20 }}
+        />
         {errorMsg && <Alert message={errorMsg} type="error" showIcon style={{ marginBottom: 20 }} />}
 
         <Form onFinish={onFinish} layout="vertical" size="large">
@@ -73,9 +79,9 @@ const Login = () => {
               ĐĂNG NHẬP
             </Button>
           </Form.Item>
-          
+
           {/* --- THÊM DÒNG NÀY ĐỂ CHUYỂN QUA TRANG ĐĂNG KÝ --- */}
-          <div style={{textAlign: 'center'}}>
+          <div style={{ textAlign: 'center' }}>
             Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
           </div>
         </Form>

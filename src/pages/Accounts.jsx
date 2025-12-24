@@ -14,7 +14,7 @@ const Accounts = () => {
 
   // URL API Backend (Hardcode cho localhost để đảm bảo chạy)
   // Lưu ý: Đảm bảo Backend đang chạy ở port 8000
-  const API_URL = 'http://127.0.0.1:8000/api/v1';
+  const API_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1';
 
   // 1. Hàm lấy danh sách tài khoản đã kết nối
   const fetchAccounts = async () => {

@@ -32,7 +32,7 @@ const CreatePost = () => {
             channel_id: parseInt(location.state.preSelectedChannelId) 
         });
     }
-  }, [location.state]);
+  }, [form, location.state]);
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -47,6 +47,7 @@ const CreatePost = () => {
             return;
         }
 
+    
         const formData = new FormData();
         formData.append('content', values.description);
         formData.append('channel_id', values.channel_id);

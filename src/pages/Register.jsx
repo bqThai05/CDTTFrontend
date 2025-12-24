@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Form, Input, Button, Card, message, Alert } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import { registerUser, verifyEmail } from '../services/api';
+import { registerUser, verifyEmail, acceptWorkspaceInvitation } from '../services/api';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -13,7 +13,18 @@ const Register = () => {
   const inputRefs = useRef([]);
   const [verifyForm] = Form.useForm();
 
+  // State to hold the pending invitation token
+  const [pendingInvitationToken, setPendingInvitationToken] = useState(null);
+
   useEffect(() => {
+    // Check for pending invitation token in localStorage on mount
+    const token = localStorage.getItem('pendingInvitationToken');
+    if (token) {
+      setPendingInvitationToken(token);
+      // Optionally, you can show a message here to inform the user
+      // message.info('Hoàn tất đăng ký để chấp nhận lời mời.');
+    }
+
     if (showVerificationForm && registeredEmail) {
       verifyForm.setFieldsValue({ email: registeredEmail });
     }
@@ -22,8 +33,6 @@ const Register = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      // Backend thường dùng endpoint này để tạo user mới
-      // Payload phải khớp với UserCreate schema trong backend
       const payload = {
         email: values.email,
         username: values.username,
@@ -36,6 +45,19 @@ const Register = () => {
       message.success('Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.');
       setRegisteredEmail(values.email);
       setShowVerificationForm(true);
+
+      // If there's a pending invitation token, try to accept it after successful registration
+      if (pendingInvitationToken) {
+        try {
+          await acceptWorkspaceInvitation(pendingInvitationToken);
+          localStorage.removeItem('pendingInvitationToken'); // Clear the token
+          message.success('Lời mời vào không gian làm việc đã được chấp nhận!');
+          navigate('/dashboard'); // Redirect to dashboard or a confirmation page
+        } catch (inviteError) {
+          console.error('Lỗi khi chấp nhận lời mời sau đăng ký:', inviteError);
+          message.error('Đăng ký thành công nhưng không thể chấp nhận lời mời. Vui lòng thử lại sau.');
+        }
+      }
 
     } catch (error) {
       console.error(error);

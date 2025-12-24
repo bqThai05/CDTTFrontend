@@ -15,7 +15,7 @@ import AcceptInvitation from './pages/AcceptInvitation';
 
 function App() {
   return (
-    <BrowserRouter basename="/CDTTFrontend">
+    <BrowserRouter basename="/">
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         

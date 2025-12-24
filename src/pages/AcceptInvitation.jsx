@@ -45,6 +45,14 @@ const AcceptInvitation = () => {
         if (error.response?.data?.detail) {
           if (typeof error.response.data.detail === 'string') {
             msg = error.response.data.detail;
+            // Check for "User not found" message
+            if (msg.includes("User not found")) {
+              localStorage.setItem('pendingInvitationToken', token); // Store the token
+              message.info('Bạn cần đăng ký tài khoản với email đã nhận lời mời để chấp nhận lời mời này.');
+              navigate('/register'); // Redirect to register page
+              setLoading(false); // Stop loading
+              return; // Exit early
+            }
           } else if (Array.isArray(error.response.data.detail)) {
             msg = error.response.data.detail.map(err => err.msg || err.message || JSON.stringify(err)).join('; ');
           } else {

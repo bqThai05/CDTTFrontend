@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Backend bạn của bạn chạy ở cổng 8000 (theo docker-compose.yml)
-const BASE_URL = 'http://127.0.0.1:8000/api/v1'; 
+const BASE_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1'; 
 
 const api = axios.create({
   baseURL: BASE_URL,

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://bqThai05.github.io/CDTTFrontend",
+  "homepage": "https://nhanthach2603.github.io/fornteteet",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

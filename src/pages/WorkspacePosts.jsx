@@ -11,7 +11,7 @@ import {
 } from '../services/api';
 import { getUserIdFromToken } from '../utils/auth';
 
-const { Text } = Typography;
+const { Text, Paragraph } = Typography;
 
 const WorkspacePosts = ({ workspaceId }) => {
   const [loading, setLoading] = useState(false);
@@ -130,7 +130,7 @@ const WorkspacePosts = ({ workspaceId }) => {
       title: 'Nội dung',
       dataIndex: 'content',
       key: 'content',
-      render: (text) => <Text ellipsis={{ rows: 2 }}>{text}</Text>,
+      render: (text) => <Paragraph ellipsis={{ rows: 2 }}>{text}</Paragraph>,
     },
     {
       title: 'Trạng thái',
