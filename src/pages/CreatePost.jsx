@@ -1,6 +1,6 @@
 // src/pages/CreatePost.jsx
 import React, { useState } from 'react';
-import { Card, Input, Button, Upload, Row, Col, Typography, Space, Select, DatePicker, message, Avatar, Divider, Badge, Tooltip, Checkbox } from 'antd';
+import { Card, Input, Button, Upload, Row, Col, Typography, Space, Select, DatePicker, message, Avatar, Divider, Badge, Tooltip, Modal, Spin } from 'antd';
 import { 
   CloudUploadOutlined, 
   FacebookFilled, 
@@ -10,9 +10,10 @@ import {
   LikeOutlined,
   CommentOutlined,
   ShareAltOutlined,
-  MoreOutlined,
   CheckCircleFilled,
-  ScheduleOutlined
+  ScheduleOutlined,
+  ThunderboltFilled,
+  RobotOutlined
 } from '@ant-design/icons';
 
 const { TextArea } = Input;
@@ -22,18 +23,20 @@ const CreatePost = () => {
   const [content, setContent] = useState('');
   const [fileList, setFileList] = useState([]);
   
-  // 1. STATE QUẢN LÝ TÀI KHOẢN ĐƯỢC CHỌN
-  // Danh sách tài khoản giả lập (Giống bên Dashboard)
+  // --- PHẦN MỚI: STATE CHO AI ---
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  // -----------------------------
+
   const myAccounts = [
     { id: 1, name: 'Review Công Nghệ Z', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
     { id: 2, name: 'Shop Quần Áo Nam', platform: 'facebook', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack' },
     { id: 3, name: 'Vlog Đời Sống', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka' },
   ];
 
-  // Mảng chứa ID các tài khoản đang được chọn (Ví dụ: [1, 2])
   const [selectedAccountIds, setSelectedAccountIds] = useState([1]); 
 
-  // Hàm xử lý chọn/bỏ chọn tài khoản
   const toggleAccount = (id) => {
     if (selectedAccountIds.includes(id)) {
       setSelectedAccountIds(selectedAccountIds.filter(accId => accId !== id));
@@ -42,12 +45,30 @@ const CreatePost = () => {
     }
   };
 
-  // Lấy thông tin tài khoản đầu tiên đang chọn để hiển thị Preview
   const previewAccount = myAccounts.find(acc => acc.id === selectedAccountIds[selectedAccountIds.length - 1]) || myAccounts[0];
-
-  // Xử lý upload ảnh (giả lập)
   const handleUpload = ({ fileList: newFileList }) => setFileList(newFileList);
   const previewImage = fileList.length > 0 ? fileList[0].thumbUrl || URL.createObjectURL(fileList[0].originFileObj) : null;
+
+  // --- HÀM GIẢ LẬP AI VIẾT BÀI ---
+  const handleAiGenerate = () => {
+    if (!aiTopic) {
+        message.warning('Vui lòng nhập chủ đề bạn muốn viết!');
+        return;
+    }
+    setAiLoading(true);
+    
+    // Giả vờ đợi 1.5 giây như đang gọi ChatGPT
+    setTimeout(() => {
+        const fakeContent = `🔥 [HOT TREND] ${aiTopic.toUpperCase()} ĐANG ĐỔ BỘ! 🔥\n\n✨ Cơ hội không thể bỏ lỡ dành cho các fan cứng nhà mình đây ạ. Sau bao ngày chờ đợi thì cuối cùng em nó cũng đã xuất hiện.\n\n👉 Tính năng nổi bật:\n✅ Thiết kế sang trọng, hiện đại\n✅ Hiệu năng đỉnh cao, cân mọi tác vụ\n✅ Giá cực yêu thương cho 100 bạn chốt đơn sớm nhất\n\n🎁 QUÀ TẶNG: Voucher giảm giá 20% + Freeship toàn quốc.\n\n👇 Comment ngay "CHẤM" để nhận báo giá chi tiết nhé cả nhà ơi! 👇\n#${aiTopic.replace(/\s/g, '')} #Review #Unboxing #Trending #Viral`;
+        
+        setContent(fakeContent);
+        setAiLoading(false);
+        setIsAiModalOpen(false);
+        message.success('AI đã viết xong nội dung cho bạn!');
+        setAiTopic('');
+    }, 1500);
+  };
+  // ------------------------------
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
@@ -62,7 +83,7 @@ const CreatePost = () => {
 
           <Card bordered={false} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: 12 }}>
             
-            {/* 1. KHU VỰC CHỌN TÀI KHOẢN (QUAN TRỌNG) */}
+            {/* 1. CHỌN TÀI KHOẢN */}
             <div style={{ marginBottom: 24 }}>
               <Text strong style={{ display: 'block', marginBottom: 12 }}>Đăng lên:</Text>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -97,18 +118,31 @@ const CreatePost = () => {
                     );
                  })}
               </div>
-              {selectedAccountIds.length === 0 && <Text type="danger" style={{ fontSize: 12 }}>* Vui lòng chọn ít nhất 1 kênh</Text>}
             </div>
 
             <Divider />
 
-            {/* 2. Nhập nội dung */}
+            {/* 2. NỘI DUNG & NÚT AI MAGIC */}
             <div style={{ marginBottom: 24 }}>
-               <Text strong>Nội dung bài viết:</Text>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <Text strong>Nội dung bài viết:</Text>
+                    
+                    {/* NÚT KÍCH HOẠT AI */}
+                    <Button 
+                        type="dashed" 
+                        size="small" 
+                        icon={<ThunderboltFilled style={{ color: '#faad14' }} />} 
+                        onClick={() => setIsAiModalOpen(true)}
+                        style={{ color: '#1677ff', borderColor: '#1677ff' }}
+                    >
+                        Viết bằng AI Magic
+                    </Button>
+               </div>
+               
                <TextArea 
                   rows={6} 
                   placeholder="Nhập nội dung caption, mô tả video..." 
-                  style={{ marginTop: 8, fontSize: 15, borderRadius: 8 }}
+                  style={{ fontSize: 15, borderRadius: 8 }}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   maxLength={2200}
@@ -116,7 +150,7 @@ const CreatePost = () => {
                />
             </div>
 
-            {/* 3. Upload Media */}
+            {/* 3. UPLOAD MEDIA */}
             <div style={{ marginBottom: 24 }}>
                <Text strong>Thêm ảnh/video/Thumbnail:</Text>
                <Upload.Dragger
@@ -134,7 +168,7 @@ const CreatePost = () => {
                </Upload.Dragger>
             </div>
 
-            {/* 4. Hành động */}
+            {/* 4. FOOTER ACTIONS */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 32 }}>
                <DatePicker 
                   showTime 
@@ -161,7 +195,7 @@ const CreatePost = () => {
           </Card>
         </Col>
 
-        {/* --- CỘT PHẢI: LIVE PREVIEW --- */}
+        {/* --- CỘT PHẢI: PREVIEW (GIỮ NGUYÊN) --- */}
         <Col xs={24} lg={10}>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
              <Title level={5} style={{ color: '#888', margin: 0 }}>Xem trước hiển thị</Title>
@@ -171,31 +205,17 @@ const CreatePost = () => {
           </div>
           
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-             {/* VỎ ĐIỆN THOẠI */}
-             <div style={{ 
-                width: 360, 
-                minHeight: 650, 
-                background: '#fff', 
-                border: '10px solid #222', 
-                borderRadius: 40, 
-                overflow: 'hidden',
-                position: 'relative',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-             }}>
-                {/* Status Bar giả */}
+             <div style={{ width: 360, minHeight: 650, background: '#fff', border: '10px solid #222', borderRadius: 40, overflow: 'hidden', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
                 <div style={{ height: 30, background: '#fff', display: 'flex', justifyContent: 'space-between', padding: '0 20px', alignItems: 'center', fontSize: 10, fontWeight: 'bold' }}>
                     <span>9:41</span>
                     <span>📶 🔋</span>
                 </div>
 
-                {/* --- LOGIC RENDER PREVIEW THEO NỀN TẢNG --- */}
-                
                 {previewAccount.platform === 'facebook' ? (
-                    // 1. GIAO DIỆN FACEBOOK
                     <div style={{ background: '#f0f2f5', height: '100%' }}>
                         <div style={{ background: '#fff', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #ddd' }}>
                              <span style={{ color: '#1877f2', fontWeight: 'bold', fontSize: 18 }}>facebook</span>
-                             <Space><SearchOutlined /><MessageOutlined /></Space>
+                             <span style={{fontSize: 18}}>🔍</span>
                         </div>
                         <div style={{ background: '#fff', marginTop: 10, paddingBottom: 10 }}>
                             <div style={{ padding: 12, display: 'flex', gap: 10 }}>
@@ -205,11 +225,10 @@ const CreatePost = () => {
                                     <div style={{ fontSize: 11, color: '#65676b' }}>Vừa xong · <GlobalOutlined /></div>
                                 </div>
                             </div>
-                            <div style={{ padding: '0 12px 12px', fontSize: 14 }}>
+                            <div style={{ padding: '0 12px 12px', fontSize: 14, whiteSpace: 'pre-line' }}>
                                 {content || 'Nội dung bài viết sẽ hiện ở đây...'}
                             </div>
                             {previewImage && <img src={previewImage} alt="Post" style={{ width: '100%', objectFit: 'cover' }} />}
-                            
                             <div style={{ padding: '10px 12px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-around', color: '#65676b' }}>
                                 <span><LikeOutlined /> Thích</span>
                                 <span><CommentOutlined /> Bình luận</span>
@@ -218,7 +237,6 @@ const CreatePost = () => {
                         </div>
                     </div>
                 ) : (
-                    // 2. GIAO DIỆN YOUTUBE
                     <div style={{ background: '#fff', height: '100%' }}>
                         <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0' }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -226,24 +244,12 @@ const CreatePost = () => {
                                 <span style={{ fontWeight: 'bold' }}>YouTube</span>
                             </div>
                         </div>
-                        
-                        {/* Video Player giả lập */}
                         <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {previewImage ? (
-                                <img src={previewImage} alt="Thumb" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                            ) : (
-                                <YoutubeFilled style={{ fontSize: 40, color: '#333' }} />
-                            )}
+                            {previewImage ? <img src={previewImage} alt="Thumb" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <YoutubeFilled style={{ fontSize: 40, color: '#333' }} />}
                         </div>
-
                         <div style={{ padding: 12 }}>
-                            <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>
-                                {content ? content.split('\n')[0] : 'Tiêu đề video YouTube sẽ hiện ở đây...'}
-                            </div>
-                            <div style={{ fontSize: 12, color: '#606060', marginTop: 4 }}>
-                                1.2K lượt xem · 2 giờ trước
-                            </div>
-                            
+                            <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{content ? content.split('\n')[0].substring(0, 50) + '...' : 'Tiêu đề video...'}</div>
+                            <div style={{ fontSize: 12, color: '#606060', marginTop: 4 }}>1.2K lượt xem · 2 giờ trước</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, paddingBottom: 12, borderBottom: '1px solid #e5e5e5' }}>
                                 <Avatar src={previewAccount.avatar} size={32} />
                                 <div style={{ flex: 1 }}>
@@ -252,26 +258,58 @@ const CreatePost = () => {
                                 </div>
                                 <Button size="small" type="primary" danger style={{ borderRadius: 20 }}>Đăng ký</Button>
                             </div>
-
                             <div style={{ marginTop: 12 }}>
                                 <Text strong>Mô tả:</Text>
-                                <div style={{ fontSize: 13, color: '#0f0f0f', marginTop: 4 }}>
-                                    {content || 'Phần mô tả chi tiết của video...'}
-                                </div>
+                                <div style={{ fontSize: 13, color: '#0f0f0f', marginTop: 4, whiteSpace: 'pre-line' }}>{content || 'Phần mô tả chi tiết...'}</div>
                             </div>
                         </div>
                     </div>
                 )}
-
              </div>
           </div>
         </Col>
       </Row>
+
+      {/* --- MODAL AI MAGIC --- */}
+      <Modal
+        title={<div><RobotOutlined style={{color: '#1677ff'}}/> Trợ lý AI Social Pro</div>}
+        open={isAiModalOpen}
+        onCancel={() => setIsAiModalOpen(false)}
+        footer={null}
+        centered
+      >
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <p>Bạn muốn viết về chủ đề gì?</p>
+            <Input 
+                placeholder="VD: Review iPhone 16, Sale Tết, Tuyển dụng..." 
+                size="large"
+                value={aiTopic}
+                onChange={(e) => setAiTopic(e.target.value)}
+                style={{ marginBottom: 20 }}
+                onPressEnter={handleAiGenerate}
+            />
+            
+            {aiLoading ? (
+                <div style={{ marginTop: 20 }}>
+                    <Spin size="large" tip="AI đang suy nghĩ..." />
+                </div>
+            ) : (
+                <Button 
+                    type="primary" 
+                    size="large" 
+                    shape="round"
+                    icon={<ThunderboltFilled />} 
+                    onClick={handleAiGenerate}
+                    style={{ background: 'linear-gradient(90deg, #1677ff 0%, #722ed1 100%)', border: 'none' }}
+                >
+                    Tạo nội dung ngay
+                </Button>
+            )}
+        </div>
+      </Modal>
+
     </div>
   );
 };
-
-// Icon Search giả cho FB
-const SearchOutlined = () => <span style={{ fontSize: 18 }}>🔍</span>;
 
 export default CreatePost;

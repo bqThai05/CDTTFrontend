@@ -1,219 +1,227 @@
 // src/pages/Dashboard.jsx
-import React, { useState } from 'react';
-import { Card, Row, Col, Statistic, Avatar, Typography, Button, Space, Tag, Breadcrumb } from 'antd';
+import React from 'react';
+import { Card, Row, Col, Statistic, Avatar, Typography, Button, List, Tag, Divider } from 'antd';
 import { 
   ArrowUpOutlined, 
-  ArrowDownOutlined, 
   YoutubeFilled, 
   FacebookFilled, 
-  ArrowLeftOutlined,
   EyeOutlined,
-  UserOutlined,
+  UsergroupAddOutlined,
   LikeOutlined,
   VideoCameraOutlined,
-  ReadOutlined
+  SettingOutlined,
+  PlusCircleOutlined,
+  LogoutOutlined
 } from '@ant-design/icons';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
-  // 1. STATE QUẢN LÝ: Đang ở màn hình chọn hay màn hình chi tiết?
-  const [selectedChannel, setSelectedChannel] = useState(null);
-
   // --- DỮ LIỆU GIẢ LẬP (MOCK DATA) ---
   
-  // Danh sách các kênh đang có
-  const myChannels = [
-    { id: 1, name: 'Review Công Nghệ Z', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', type: 'Channel', stats: { views: '1.2M', sub: '125K', growth: '+12%' } },
-    { id: 2, name: 'Shop Quần Áo Nam', platform: 'facebook', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack', type: 'Fanpage', stats: { views: '850K', sub: '45K', growth: '+5%' } },
-    { id: 3, name: 'Vlog Đời Sống', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka', type: 'Channel', stats: { views: '12K', sub: '1.2K', growth: '-2%' } },
-  ];
+  // 1. Danh sách tài khoản (Mô phỏng giống ảnh vẽ demo)
+  const connectedAccounts = {
+    youtube: [
+      { id: 1, name: 'Review Công Nghệ Z', email: 'techz@gmail.com', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', sub: 125000, views: 1200000 },
+      { id: 2, name: 'Vlog Đời Sống', email: 'vlog.life@gmail.com', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka', sub: 12000, views: 45000 },
+      { id: 3, name: 'Học Code Dạo', email: 'dev.code@gmail.com', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John', sub: 5600, views: 10000 },
+    ],
+    facebook: [
+      { id: 4, name: 'Shop Quần Áo Nam', email: 'menshop@fb.com', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack', sub: 45000, views: 850000 },
+      { id: 5, name: 'Hội Yêu Mèo', email: 'catlover@fb.com', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kitty', sub: 8900, views: 32000 },
+    ]
+  };
 
-  // Dữ liệu biểu đồ chi tiết (Khi vào trong mới thấy)
+  // 2. Tính toán TỔNG HỢP số liệu (Aggregated Stats)
+  const allAccounts = [...connectedAccounts.youtube, ...connectedAccounts.facebook];
+  const totalViews = allAccounts.reduce((sum, acc) => sum + acc.views, 0);
+  const totalSubs = allAccounts.reduce((sum, acc) => sum + acc.sub, 0);
+  const totalAccounts = allAccounts.length;
+
+  // 3. Dữ liệu biểu đồ chung toàn hệ thống
   const chartData = [
-    { name: 'T2', views: 4000, likes: 2400 },
-    { name: 'T3', views: 3000, likes: 1398 },
-    { name: 'T4', views: 2000, likes: 9800 },
-    { name: 'T5', views: 2780, likes: 3908 },
-    { name: 'T6', views: 1890, likes: 4800 },
-    { name: 'T7', views: 2390, likes: 3800 },
-    { name: 'CN', views: 3490, likes: 4300 },
+    { name: 'T2', views: 45000 },
+    { name: 'T3', views: 52000 },
+    { name: 'T4', views: 49000 },
+    { name: 'T5', views: 61000 },
+    { name: 'T6', views: 58000 },
+    { name: 'T7', views: 72000 },
+    { name: 'CN', views: 85000 },
   ];
 
-  // --- MÀN HÌNH 1: CHỌN KÊNH (LOBBY) ---
-  const renderChannelSelection = () => (
-    <div style={{ padding: '20px 0' }}>
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-         <Title level={2}>Tổng quan hệ thống</Title>
-         <Text type="secondary">Chọn kênh bạn muốn xem báo cáo chi tiết</Text>
-      </div>
-
-      <Row gutter={[24, 24]}>
-        {myChannels.map((channel) => (
-           <Col xs={24} sm={12} md={8} key={channel.id}>
-              <Card 
-                hoverable 
-                onClick={() => setSelectedChannel(channel)}
-                style={{ 
-                    borderRadius: 16, 
-                    borderTop: `6px solid ${channel.platform === 'youtube' ? '#ff0000' : '#1877f2'}`,
-                    textAlign: 'center'
-                }}
-              >
-                 <Avatar src={channel.avatar} size={80} style={{ marginBottom: 16, border: '4px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
-                 <Title level={4} style={{ marginBottom: 4 }}>{channel.name}</Title>
-                 
-                 <div style={{ marginBottom: 16 }}>
-                    {channel.platform === 'youtube' 
-                        ? <Tag color="#ff0000" icon={<YoutubeFilled />}>YouTube Channel</Tag>
-                        : <Tag color="#1877f2" icon={<FacebookFilled />}>Facebook Page</Tag>
-                    }
-                 </div>
-
-                 {/* Số liệu tóm tắt bên ngoài */}
-                 <Row gutter={8} style={{ background: '#f5f5f5', padding: '12px 0', borderRadius: 8 }}>
-                    <Col span={12} style={{ borderRight: '1px solid #ddd' }}>
-                        <div style={{ fontSize: 12, color: '#888' }}>Người theo dõi</div>
-                        <div style={{ fontWeight: 'bold', fontSize: 16 }}>{channel.stats.sub}</div>
-                    </Col>
-                    <Col span={12}>
-                        <div style={{ fontSize: 12, color: '#888' }}>Tăng trưởng</div>
-                        <div style={{ fontWeight: 'bold', color: channel.stats.growth.includes('+') ? 'green' : 'red' }}>
-                            {channel.stats.growth}
-                        </div>
-                    </Col>
-                 </Row>
-              </Card>
-           </Col>
-        ))}
-      </Row>
-    </div>
-  );
-
-  // --- MÀN HÌNH 2: DASHBOARD CHI TIẾT (DETAIL) ---
-  const renderDashboardDetail = () => (
-    <div>
-        {/* Header điều hướng */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <Space>
-                <Button icon={<ArrowLeftOutlined />} onClick={() => setSelectedChannel(null)} shape="circle" size="large" />
-                <div>
-                    <Breadcrumb items={[{ title: 'Tổng quan' }, { title: selectedChannel.name }]} />
-                    <Title level={3} style={{ margin: 0 }}>
-                        {selectedChannel.platform === 'youtube' ? <YoutubeFilled style={{color:'red'}}/> : <FacebookFilled style={{color:'#1877f2'}}/>} 
-                        {' ' + selectedChannel.name}
-                    </Title>
-                </div>
-            </Space>
-            <Button>Xuất báo cáo</Button>
-        </div>
-
-        {/* 1. Các thẻ số liệu chính */}
-        <Row gutter={[24, 24]}>
+  return (
+    <div style={{ maxWidth: 1400, margin: '0 auto', padding: 24 }}>
+      
+      {/* --- PHẦN 1: THẺ SỐ LIỆU TỔNG QUAN (GLOBAL STATS) --- */}
+      <div style={{ marginBottom: 24 }}>
+          <Title level={3} style={{ marginBottom: 20 }}>Tổng quan hệ thống</Title>
+          <Row gutter={[24, 24]}>
             <Col xs={24} sm={12} lg={6}>
                 <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                     <Statistic 
-                        title="Tổng lượt xem (Views)" 
-                        value={selectedChannel.id === 1 ? 112893 : 4500} // Fake số liệu đổi theo kênh
+                        title="Tổng lượt xem (Toàn bộ)" 
+                        value={totalViews} 
                         prefix={<EyeOutlined />} 
                         valueStyle={{ color: '#3f8600' }}
                     />
-                    <div style={{ marginTop: 8, color: 'green' }}><ArrowUpOutlined /> 12% so với tháng trước</div>
+                    <div style={{ color: 'green', marginTop: 8 }}><ArrowUpOutlined /> +12% tuần này</div>
                 </Card>
             </Col>
             <Col xs={24} sm={12} lg={6}>
                 <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                     <Statistic 
-                        title="Người đăng ký (Subscribers)" 
-                        value={selectedChannel.stats.sub} 
-                        prefix={<UserOutlined />} 
+                        title="Tổng người theo dõi" 
+                        value={totalSubs} 
+                        prefix={<UsergroupAddOutlined />} 
                         valueStyle={{ color: '#1677ff' }}
                     />
-                    <div style={{ marginTop: 8, color: 'green' }}><ArrowUpOutlined /> +150 người mới</div>
+                    <div style={{ color: 'green', marginTop: 8 }}><ArrowUpOutlined /> +{connectedAccounts.youtube.length + connectedAccounts.facebook.length} kênh đang kết nối</div>
                 </Card>
             </Col>
             <Col xs={24} sm={12} lg={6}>
                 <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                     <Statistic 
-                        title="Video đã đăng" 
-                        value={142} 
+                        title="Tổng bài viết/Video" 
+                        value={1240} 
                         prefix={<VideoCameraOutlined />} 
                     />
-                    <div style={{ marginTop: 8, color: '#888' }}>2 video tuần này</div>
+                    <Text type="secondary" style={{ marginTop: 8, display: 'block' }}>Đã đăng trên {totalAccounts} tài khoản</Text>
                 </Card>
             </Col>
             <Col xs={24} sm={12} lg={6}>
                 <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                     <Statistic 
                         title="Tương tác trung bình" 
-                        value="8.5%" 
+                        value="8.2%" 
                         prefix={<LikeOutlined />} 
                         valueStyle={{ color: '#cf1322' }}
                     />
-                    <div style={{ marginTop: 8, color: 'red' }}><ArrowDownOutlined /> Giảm nhẹ</div>
+                     <Text type="secondary" style={{ marginTop: 8, display: 'block' }}>Ổn định so với tuần trước</Text>
                 </Card>
             </Col>
-        </Row>
+          </Row>
+      </div>
 
-        {/* 2. Biểu đồ */}
-        <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-            <Col xs={24} lg={16}>
-                <Card title="Biểu đồ tăng trưởng (7 ngày qua)" bordered={false} style={{ borderRadius: 12 }}>
-                    <div style={{ height: 300, width: '100%' }}>
+      {/* --- PHẦN 2: CHIA CỘT (DANH SÁCH TÀI KHOẢN vs BIỂU ĐỒ) --- */}
+      <Row gutter={[24, 24]}>
+          
+          {/* CỘT TRÁI: DANH SÁCH TÀI KHOẢN (Giống ảnh demo) */}
+          <Col xs={24} lg={8}>
+              <Card 
+                title={<div style={{display:'flex', alignItems:'center', gap: 10}}><SettingOutlined /> Quản lý tài khoản</div>}
+                bordered={false} 
+                style={{ borderRadius: 12, height: '100%', overflow: 'hidden' }}
+                bodyStyle={{ padding: 0, background: '#f5f5f5' }}
+                extra={<Button type="link" size="small" icon={<PlusCircleOutlined />}>Thêm</Button>}
+              >
+                  
+                  {/* NHÓM YOUTUBE */}
+                  <div style={{ background: '#e6f7ff', padding: '10px 16px', borderBottom: '1px solid #d9d9d9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold', color: '#ff0000', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <YoutubeFilled style={{ fontSize: 20 }} /> YOUTUBE CHANNELS
+                      </span>
+                      <Tag color="red">{connectedAccounts.youtube.length}</Tag>
+                  </div>
+                  <div style={{ background: '#fff' }}>
+                      <List
+                        itemLayout="horizontal"
+                        dataSource={connectedAccounts.youtube}
+                        renderItem={item => (
+                          <List.Item 
+                            style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}
+                            actions={[<Tooltip title="Đăng xuất"><Button size="small" type="text" danger icon={<LogoutOutlined />} /></Tooltip>]}
+                            className="account-item" // Class để hover
+                          >
+                            <List.Item.Meta
+                              avatar={<Avatar src={item.avatar} size={40} style={{ border: '2px solid #ff0000' }} />}
+                              title={<span style={{ fontWeight: 600 }}>{item.name}</span>}
+                              description={<span style={{ fontSize: 12, color: '#888' }}>{item.email}</span>}
+                            />
+                          </List.Item>
+                        )}
+                      />
+                  </div>
+
+                  {/* NHÓM FACEBOOK */}
+                  <div style={{ background: '#e6f7ff', padding: '10px 16px', borderBottom: '1px solid #d9d9d9', borderTop: '1px solid #d9d9d9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold', color: '#1877f2', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <FacebookFilled style={{ fontSize: 20 }} /> FACEBOOK PAGES
+                      </span>
+                      <Tag color="blue">{connectedAccounts.facebook.length}</Tag>
+                  </div>
+                  <div style={{ background: '#fff' }}>
+                      <List
+                        itemLayout="horizontal"
+                        dataSource={connectedAccounts.facebook}
+                        renderItem={item => (
+                          <List.Item 
+                            style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}
+                            actions={[<Tooltip title="Đăng xuất"><Button size="small" type="text" danger icon={<LogoutOutlined />} /></Tooltip>]}
+                          >
+                            <List.Item.Meta
+                              avatar={<Avatar src={item.avatar} size={40} style={{ border: '2px solid #1877f2' }} />}
+                              title={<span style={{ fontWeight: 600 }}>{item.name}</span>}
+                              description={<span style={{ fontSize: 12, color: '#888' }}>{item.email}</span>}
+                            />
+                          </List.Item>
+                        )}
+                      />
+                  </div>
+                  
+                  {/* Nút xem tất cả */}
+                  <div style={{ padding: 12, textAlign: 'center', background: '#fff' }}>
+                      <Button type="dashed" block>Quản lý tất cả kết nối</Button>
+                  </div>
+
+              </Card>
+          </Col>
+
+          {/* CỘT PHẢI: BIỂU ĐỒ & HOẠT ĐỘNG */}
+          <Col xs={24} lg={16}>
+              <Card title="Hiệu suất tăng trưởng toàn hệ thống" bordered={false} style={{ borderRadius: 12, marginBottom: 24 }}>
+                    <div style={{ height: 320, width: '100%' }}>
                         <ResponsiveContainer>
                             <AreaChart data={chartData}>
                                 <defs>
-                                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#1677ff" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="#1677ff" stopOpacity={0}/>
+                                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#1890ff" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="#1890ff" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
                                 <XAxis dataKey="name" />
                                 <YAxis />
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <Tooltip />
-                                <Area type="monotone" dataKey="views" stroke="#1677ff" fillOpacity={1} fill="url(#colorViews)" />
+                                <Tooltip labelStyle={{ color: '#000' }} />
+                                <Area type="monotone" dataKey="views" stroke="#1890ff" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
-                </Card>
-            </Col>
-            <Col xs={24} lg={8}>
-                <Card title="Nội dung top đầu" bordered={false} style={{ borderRadius: 12, height: '100%' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <div style={{ width: 40, height: 40, background: '#f0f0f0', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 500 }}>Review iPhone 16</div>
-                                <div style={{ fontSize: 12, color: '#888' }}>50K Views</div>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <div style={{ width: 40, height: 40, background: '#f0f0f0', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 500 }}>Vlog đi Đà Lạt</div>
-                                <div style={{ fontSize: 12, color: '#888' }}>32K Views</div>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <div style={{ width: 40, height: 40, background: '#f0f0f0', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 500 }}>Hướng dẫn Code</div>
-                                <div style={{ fontSize: 12, color: '#888' }}>15K Views</div>
-                            </div>
-                        </div>
-                    </div>
-                </Card>
-            </Col>
-        </Row>
-    </div>
-  );
+              </Card>
 
-  return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
-        {/* Logic hiển thị: Nếu chưa chọn kênh -> Hiện danh sách. Nếu chọn rồi -> Hiện chi tiết */}
-        {!selectedChannel ? renderChannelSelection() : renderDashboardDetail()}
+              {/* Bảng hoạt động gần đây */}
+              <Card title="Hoạt động gần đây" bordered={false} style={{ borderRadius: 12 }}>
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={[
+                        { title: 'Video: Review iPhone 16', time: '2 giờ trước', platform: 'youtube', status: 'Đã đăng' },
+                        { title: 'Post: Khuyến mãi Tết', time: '5 giờ trước', platform: 'facebook', status: 'Đã đăng' },
+                        { title: 'Video: Hướng dẫn ReactJS', time: '1 ngày trước', platform: 'youtube', status: 'Đang xử lý' },
+                    ]}
+                    renderItem={item => (
+                        <List.Item>
+                            <List.Item.Meta
+                                avatar={item.platform === 'youtube' ? <YoutubeFilled style={{color:'red', fontSize: 24}}/> : <FacebookFilled style={{color:'#1877f2', fontSize: 24}}/>}
+                                title={<span>{item.title}</span>}
+                                description={item.time}
+                            />
+                            <Tag color={item.status === 'Đã đăng' ? 'green' : 'orange'}>{item.status}</Tag>
+                        </List.Item>
+                    )}
+                  />
+              </Card>
+          </Col>
+      </Row>
     </div>
   );
 };

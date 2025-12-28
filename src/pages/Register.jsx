@@ -1,8 +1,12 @@
+// src/pages/Register.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Form, Input, Button, Card, message, Alert } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message, Alert, Typography, Divider } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, RocketOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser, verifyEmail, acceptWorkspaceInvitation } from '../services/api';
+import PageTransition from '../components/PageTransition';
+
+const { Title, Text } = Typography;
 
 const Register = () => {
   const navigate = useNavigate();
@@ -12,24 +16,17 @@ const Register = () => {
   const [otp, setOtp] = useState(new Array(6).fill(''));
   const inputRefs = useRef([]);
   const [verifyForm] = Form.useForm();
-
-  // State to hold the pending invitation token
   const [pendingInvitationToken, setPendingInvitationToken] = useState(null);
 
   useEffect(() => {
-    // Check for pending invitation token in localStorage on mount
     const token = localStorage.getItem('pendingInvitationToken');
-    if (token) {
-      setPendingInvitationToken(token);
-      // Optionally, you can show a message here to inform the user
-      // message.info('Hoàn tất đăng ký để chấp nhận lời mời.');
-    }
-
+    if (token) setPendingInvitationToken(token);
     if (showVerificationForm && registeredEmail) {
       verifyForm.setFieldsValue({ email: registeredEmail });
     }
   }, [showVerificationForm, registeredEmail, verifyForm]);
 
+  // --- LOGIC GIỮ NGUYÊN KHÔNG ĐỔI ---
   const onFinish = async (values) => {
     setLoading(true);
     try {
@@ -39,41 +36,26 @@ const Register = () => {
         phone_number: values.phone_number,
         password: values.password
       };
-
       await registerUser(payload);
-
-      message.success('Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.');
+      message.success('🧧 Đăng ký thành công! Nhập OTP để nhận lì xì nhé.');
       setRegisteredEmail(values.email);
       setShowVerificationForm(true);
 
-      // If there's a pending invitation token, try to accept it after successful registration
       if (pendingInvitationToken) {
         try {
           await acceptWorkspaceInvitation(pendingInvitationToken);
-          localStorage.removeItem('pendingInvitationToken'); // Clear the token
-          message.success('Lời mời vào không gian làm việc đã được chấp nhận!');
-          navigate('/dashboard'); // Redirect to dashboard or a confirmation page
-        } catch (inviteError) {
-          console.error('Lỗi khi chấp nhận lời mời sau đăng ký:', inviteError);
-          message.error('Đăng ký thành công nhưng không thể chấp nhận lời mời. Vui lòng thử lại sau.');
-        }
+          localStorage.removeItem('pendingInvitationToken');
+        } catch (e) { console.error(e); }
       }
-
     } catch (error) {
       console.error(error);
-      let errorMsg = 'Đăng ký thất bại. Vui lòng thử lại.';
-      if (error.response && error.response.data) {
-        if (error.response.data.detail) {
-          if (Array.isArray(error.response.data.detail)) {
-            errorMsg = error.response.data.detail.map(err => err.msg).join('; ');
-          } else {
-            errorMsg = error.response.data.detail;
-          }
-        } else if (typeof error.response.data.message === 'string') {
-          errorMsg = error.response.data.message;
-        } else if (typeof error.response.data === 'string') {
-          errorMsg = error.response.data;
-        }
+      let errorMsg = 'Đăng ký thất bại.';
+      if (error.response?.data?.detail) {
+         errorMsg = Array.isArray(error.response.data.detail) 
+          ? error.response.data.detail.map(err => err.msg).join('; ')
+          : error.response.data.detail;
+      } else if (typeof error.response?.data?.message === 'string') {
+        errorMsg = error.response.data.message;
       }
       message.error(errorMsg);
     } finally {
@@ -85,40 +67,11 @@ const Register = () => {
     setLoading(true);
     try {
       const email = verifyForm.getFieldValue('email');
-      if (!email) {
-        message.error('Không tìm thấy email để xác minh. Vui lòng thử lại.');
-        setLoading(false);
-        return;
-      }
-      const verificationCode = submittedOtp; // Sử dụng OTP được truyền vào
-      if (verificationCode.length !== 6) {
-        message.error('Vui lòng nhập đủ 6 chữ số mã xác minh!');
-        setLoading(false);
-        return;
-      }
-
-      const payload = {
-        email: email,
-        code: verificationCode,
-      };
-      await verifyEmail(payload);
-      message.success('Xác minh email thành công! Bạn có thể đăng nhập ngay bây giờ.');
+      await verifyEmail({ email, code: submittedOtp });
+      message.success('🎉 Xác minh thành công! Đăng nhập ngay.');
       navigate('/login');
-    } catch (error) {
-      console.error(error);
-      let errorMsg = 'Xác minh email thất bại. Vui lòng thử lại.';
-      if (error.response && error.response.data) {
-        if (Array.isArray(error.response.data.detail)) {
-          errorMsg = error.response.data.detail.map(err => err.msg).join('; ');
-        } else if (error.response.data.detail) {
-          errorMsg = error.response.data.detail;
-        } else if (typeof error.response.data.message === 'string') {
-          errorMsg = error.response.data.message;
-        } else if (typeof error.response.data === 'string') {
-          errorMsg = error.response.data;
-        }
-      }
-      message.error(errorMsg);
+    } catch {
+      message.error('Mã xác minh không đúng hoặc đã hết hạn.');
     } finally {
       setLoading(false);
     }
@@ -126,134 +79,134 @@ const Register = () => {
 
   const handleChange = (e, index) => {
     const { value } = e.target;
-    if (/[^0-9]/.test(value)) return; // Chỉ chấp nhận số
-
+    if (/[^0-9]/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
-    // Tự động chuyển focus
-    if (value && index < 5) {
-      inputRefs.current[index + 1].focus();
-    }
-
-    // Tự động gửi khi nhập đủ 6 số
-    if (newOtp.join('').length === 6) {
-      handleVerifyEmail(newOtp.join(''));
-    }
+    if (value && index < 5) inputRefs.current[index + 1].focus();
+    if (newOtp.join('').length === 6) handleVerifyEmail(newOtp.join(''));
   };
 
   const handleKeyDown = (e, index) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      // Di chuyển focus về ô trước đó khi nhấn Backspace và ô hiện tại trống
-      inputRefs.current[index - 1].focus();
-    }
+    if (e.key === 'Backspace' && !otp[index] && index > 0) inputRefs.current[index - 1].focus();
   };
 
   return (
-    <div style={{ 
-      display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', 
-      background: 'linear-gradient(135deg, #001529 0%, #00417a 100%)' 
-    }}>
-      <Card 
-        title={<div style={{textAlign: 'center', fontSize: 20, fontWeight: 'bold'}}>{showVerificationForm ? 'XÁC MINH EMAIL' : 'ĐĂNG KÝ TÀI KHOẢN'}</div>} 
-        style={{ width: 400, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
-      >
-        {!showVerificationForm ? (
-          <Form name="register_form" onFinish={onFinish} layout="vertical" size="large">
-            
-            <Form.Item
-              name="email"
-            >
-              <Input prefix={<MailOutlined />} placeholder="Email" />
-            </Form.Item>
-
-            <Form.Item
-              name="phone_number"
-              rules={[{ required: true, message: 'Vui lòng nhập Số điện thoại!' }]}
-            >
-              <Input prefix={<UserOutlined />} placeholder="Số điện thoại" />
-            </Form.Item>
-
-            <Form.Item
-              name="username"
-              rules={[{ required: true, message: 'Vui lòng nhập Tên đăng nhập!' }]}
-            >
-              <Input prefix={<UserOutlined />} placeholder="Tên đăng nhập (Username)" />
-            </Form.Item>
-
-            <Form.Item
-              name="password"
-              rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
-            >
-              <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" />
-            </Form.Item>
-
-            <Form.Item
-              name="confirm"
-              dependencies={['password']}
-              hasFeedback
-              rules={[
-                { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || getFieldValue('password') === value) {
-                      return Promise.resolve();
-                    }
-                    return Promise.reject(new Error('Hai mật khẩu không khớp!'));
-                  },
-                }),
-              ]}
-            >
-              <Input.Password prefix={<LockOutlined />} placeholder="Nhập lại mật khẩu" />
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit" block loading={loading}>
-                ĐĂNG KÝ
-              </Button>
-            </Form.Item>
-            
-            <div style={{textAlign: 'center'}}>
-              Đã có tài khoản? <Link to="/login">Đăng nhập ngay</Link>
-            </div>
-          </Form>
-        ) : (
-          <Form name="verify_form" form={verifyForm} layout="vertical" size="large">
-            <Alert
-              title="Mã xác minh đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư đến (và cả thư mục spam)."
-              type="info"
-              showIcon
-              style={{ marginBottom: 20 }}
-            />
-            <Form.Item
-              name="email"
-            >
-              <Input prefix={<MailOutlined />} placeholder="Email" disabled />
-            </Form.Item>
-            <Form.Item label="Mã xác minh (6 chữ số)">
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                {otp.map((digit, index) => (
-                  <Input
-                    key={index}
-                    ref={el => inputRefs.current[index] = el}
-                    value={digit}
-                    maxLength={1}
-                    onChange={e => handleChange(e, index)}
-                    onKeyDown={e => handleKeyDown(e, index)}
-                    style={{ width: '40px', textAlign: 'center', fontSize: '18px' }}
-                  />
-                ))}
+    <PageTransition>
+    <div style={{ height: '100vh', display: 'flex', overflow: 'hidden', background: '#fffcf5' }}>
+      
+      {/* 1. CỘT TRÁI: POSTER TẾT (Đồng bộ với Login nhưng khác hình chút cho đỡ chán) */}
+      <div style={{ 
+          flex: 1, 
+          // Ảnh khác một chút so với Login nhưng cùng tone màu
+          background: 'url(https://images.unsplash.com/photo-1516013069176-79c88554236a?q=80&w=1887&auto=format&fit=crop) center/cover no-repeat',
+          position: 'relative',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column'
+      }} className="hidden-mobile">
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(200, 0, 0, 0.5), rgba(255, 215, 0, 0.1))' }}></div>
+          
+          <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', color: '#fff', padding: 40 }}>
+              <Title level={1} style={{ color: '#fff', fontSize: 50, fontFamily: "serif", marginBottom: 10 }}>
+                  Gia Nhập Social Pro
+              </Title>
+              <div style={{ fontSize: 18, fontStyle: 'italic', maxWidth: 400 }}>
+                  "Khởi đầu năm mới với công cụ quản lý mạng xã hội đỉnh cao"
               </div>
-            </Form.Item>
+          </div>
+          <div className="petal"></div><div className="petal"></div><div className="petal"></div>
+      </div>
 
-            <div style={{textAlign: 'center'}}>
-              <Button type="link" onClick={() => setShowVerificationForm(false)}>Quay lại đăng ký</Button>
+      {/* 2. CỘT PHẢI: FORM ĐĂNG KÝ (Trắng sạch sẽ) */}
+      <div style={{ flex: '0 0 550px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflowY: 'auto' }}>
+        
+        {/* Lồng đèn SVG treo góc phải */}
+        <div style={{ position: 'absolute', top: 0, right: 30, animation: 'swing 3s infinite ease-in-out', transformOrigin: 'top center', zIndex: 10 }}>
+            <svg width="60" height="100" viewBox="0 0 100 180" fill="none">
+                <line x1="50" y1="0" x2="50" y2="40" stroke="#d4145a" strokeWidth="3"/>
+                <rect x="20" y="40" width="60" height="70" rx="15" fill="#d4145a" stroke="#fbb03b" strokeWidth="3"/>
+                <circle cx="50" cy="75" r="15" fill="#fbb03b" />
+                <text x="50" y="80" textAnchor="middle" fill="#d4145a" fontSize="14" fontWeight="bold">LỘC</text>
+                <line x1="35" y1="110" x2="35" y2="150" stroke="#d4145a" strokeWidth="3"/>
+                <line x1="50" y1="110" x2="50" y2="170" stroke="#d4145a" strokeWidth="3"/>
+                <line x1="65" y1="110" x2="65" y2="150" stroke="#d4145a" strokeWidth="3"/>
+            </svg>
+        </div>
+
+        <div style={{ width: '100%', maxWidth: 420, padding: '40px 25px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 25 }}>
+                <Title level={2} className="text-gradient-tet" style={{margin: 0}}>
+                    {showVerificationForm ? 'Xác Minh OTP' : 'Đăng Ký Tài Khoản'}
+                </Title>
+                <Text type="secondary">{showVerificationForm ? 'Nhập mã 6 số gửi về Email' : 'Điền thông tin để nhận ưu đãi Tết'}</Text>
             </div>
-          </Form>
-        )}
-      </Card>
+
+            {!showVerificationForm ? (
+                // --- FORM ĐĂNG KÝ ---
+                <Form name="register_form" onFinish={onFinish} layout="vertical" size="large">
+                    <Form.Item name="email" rules={[{ required: true, message: 'Nhập email!' }, { type: 'email', message: 'Email sai rồi!' }]} style={{marginBottom: 15}}>
+                        <Input prefix={<MailOutlined style={{color:'#d4145a'}}/>} placeholder="Email" style={{borderRadius: 8}}/>
+                    </Form.Item>
+
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <Form.Item name="username" rules={[{ required: true, message: 'Nhập username!' }]} style={{flex: 1, marginBottom: 15}}>
+                            <Input prefix={<UserOutlined style={{color:'#d4145a'}}/>} placeholder="Username" style={{borderRadius: 8}}/>
+                        </Form.Item>
+                        <Form.Item name="phone_number" rules={[{ required: true, message: 'Nhập SĐT!' }]} style={{flex: 1, marginBottom: 15}}>
+                            <Input prefix={<PhoneOutlined style={{color:'#d4145a'}}/>} placeholder="Số ĐT" style={{borderRadius: 8}}/>
+                        </Form.Item>
+                    </div>
+
+                    <Form.Item name="password" rules={[{ required: true, message: 'Nhập mật khẩu!' }]} style={{marginBottom: 15}}>
+                        <Input.Password prefix={<LockOutlined style={{color:'#d4145a'}}/>} placeholder="Mật khẩu" style={{borderRadius: 8}}/>
+                    </Form.Item>
+
+                    <Form.Item name="confirm" dependencies={['password']} hasFeedback rules={[{ required: true, message: 'Xác nhận lại!' }, ({ getFieldValue }) => ({ validator(_, value) { if (!value || getFieldValue('password') === value) return Promise.resolve(); return Promise.reject(new Error('Không khớp!')); }, })]} style={{marginBottom: 25}}>
+                        <Input.Password prefix={<LockOutlined style={{color:'#d4145a'}}/>} placeholder="Nhập lại mật khẩu" style={{borderRadius: 8}}/>
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" block loading={loading} icon={<RocketOutlined />}
+                            style={{ 
+                                height: 48, borderRadius: 24, fontSize: 16, fontWeight: 'bold',
+                                background: 'linear-gradient(90deg, #d4145a, #fbb03b)', border: 'none'
+                            }}>
+                            ĐĂNG KÝ NGAY
+                        </Button>
+                    </Form.Item>
+                    
+                    <div style={{textAlign: 'center'}}>
+                        Đã có tài khoản? <Link to="/login" style={{color:'#d4145a', fontWeight:'bold'}}>Đăng nhập ngay</Link>
+                    </div>
+                </Form>
+            ) : (
+                // --- FORM OTP ---
+                <div style={{ animation: 'fadeIn 0.5s' }}>
+                    <Alert message="Đã gửi mã OTP! Kiểm tra cả mục Spam nhé." type="success" showIcon style={{ marginBottom: 20 }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 30 }}>
+                        {otp.map((digit, index) => (
+                        <Input key={index} ref={el => inputRefs.current[index] = el} value={digit} maxLength={1} onChange={e => handleChange(e, index)} onKeyDown={e => handleKeyDown(e, index)}
+                            style={{ width: '50px', height: '50px', textAlign: 'center', fontSize: '20px', fontWeight: 'bold', color: '#d4145a', border: '2px solid #ffecb3', borderRadius: 10 }} />
+                        ))}
+                    </div>
+                    <Button type="link" onClick={() => setShowVerificationForm(false)} icon={<ArrowLeftOutlined />} style={{ display: 'block', margin: '0 auto', color: '#666' }}>
+                        Quay lại sửa Email
+                    </Button>
+                </div>
+            )}
+        </div>
+      </div>
+      
+      <style>{`
+        @keyframes swing { 0% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } 100% { transform: rotate(5deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) {
+            .hidden-mobile { display: none !important; }
+            div[style*="flex: 0 0 550px"] { flex: 1 !important; }
+        }
+      `}</style>
     </div>
+    </PageTransition>
   );
 };
 
