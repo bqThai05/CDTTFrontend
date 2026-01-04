@@ -16,6 +16,10 @@ import Workspaces from './pages/Workspaces';
 import WorkspaceDetail from './pages/WorkspaceDetail';
 import AcceptInvitation from './pages/AcceptInvitation';
 import LandingPage from './pages/LandingPage';
+import ForgotPassword from './pages/ForgotPassword'; // <--- Thêm dòng này
+import ResetPassword from './pages/ResetPassword';
+import Profile from './pages/Profile';
+import FacebookIntegration from './pages/FacebookIntegration';
 // ĐÃ XÓA: import NotFound ...
 
 // Import Layout
@@ -42,6 +46,8 @@ const AnimatedRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/accept-invitation" element={<AcceptInvitation />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* 3. CÁC TRANG QUẢN TRỊ */}
         <Route 
@@ -51,12 +57,14 @@ const AnimatedRoutes = () => {
             </ProtectedRoute>
           }
         >
+          <Route path="/profile" element={<Profile />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="create-post" element={<CreatePost />} />
           <Route path="accounts" element={<Accounts />} />
           <Route path="feed" element={<PostHistory />} />
           <Route path="content" element={<ChannelContent />} />
           <Route path="youtube-integration" element={<YoutubeIntegration />} />
+          <Route path="/facebook-integration" element={<FacebookIntegration />} />
           <Route path="workspaces" element={<Workspaces />} />
           <Route path="workspaces/:workspaceId" element={<WorkspaceDetail />} />
         </Route>

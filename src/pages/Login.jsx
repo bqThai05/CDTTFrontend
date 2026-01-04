@@ -1,14 +1,13 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
 import { Form, Input, Button, Typography, message, Alert, Checkbox, Divider } from 'antd';
-import { UserOutlined, LockOutlined, GiftOutlined, GoogleOutlined, FacebookFilled } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, GiftOutlined, GoogleOutlined, FacebookFilled, RocketFilled } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import PageTransition from '../components/PageTransition';
 
 const { Title, Text } = Typography;
 
-// Link API trỏ về máy bạn
 const API_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1';
 
 const Login = () => {
@@ -79,17 +78,13 @@ const Login = () => {
       {/* 2. CỘT PHẢI: FORM LOGIN */}
       <div style={{ flex: '0 0 500px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
         
-        {/* --- LỒNG ĐÈN SVG (Vẽ bằng code - Không bao giờ lỗi ảnh) --- */}
+        {/* --- LỒNG ĐÈN SVG --- */}
         <div style={{ position: 'absolute', top: 0, right: 40, animation: 'swing 3s infinite ease-in-out', transformOrigin: 'top center' }}>
             <svg width="80" height="140" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Dây treo */}
                 <line x1="50" y1="0" x2="50" y2="40" stroke="#d4145a" strokeWidth="3"/>
-                {/* Thân đèn */}
                 <rect x="20" y="40" width="60" height="70" rx="15" fill="#d4145a" stroke="#fbb03b" strokeWidth="3"/>
-                {/* Chữ Phúc/Tết ở giữa */}
                 <circle cx="50" cy="75" r="15" fill="#fbb03b" />
                 <text x="50" y="80" textAnchor="middle" fill="#d4145a" fontSize="14" fontWeight="bold" fontFamily="serif">TẾT</text>
-                {/* Tua rua bên dưới */}
                 <line x1="35" y1="110" x2="35" y2="150" stroke="#d4145a" strokeWidth="3"/>
                 <line x1="50" y1="110" x2="50" y2="170" stroke="#d4145a" strokeWidth="3"/>
                 <line x1="65" y1="110" x2="65" y2="150" stroke="#d4145a" strokeWidth="3"/>
@@ -98,9 +93,15 @@ const Login = () => {
 
         <div style={{ width: '100%', maxWidth: 400, padding: 25 }}>
             <div style={{ textAlign: 'center', marginBottom: 30 }}>
-                <img src="https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg" alt="logo" style={{ width: 48, marginBottom: 10 }} />
+                <RocketFilled 
+                    style={{ 
+                        fontSize: '50px',
+                        color: '#d4145a',
+                        marginBottom: 15
+                    }} 
+                />
                 <Title level={2} className="text-gradient-tet" style={{margin: 0}}>Đăng Nhập Khai Xuân</Title>
-                <Text type="secondary">Admin Social Pro</Text>
+                <Text type="secondary">Social Pro</Text>
             </div>
 
             {errorMsg && <Alert message={errorMsg} type="error" showIcon style={{ marginBottom: 20 }} />}
@@ -114,12 +115,18 @@ const Login = () => {
                     <Input.Password prefix={<LockOutlined style={{ color: '#d4145a' }} />} placeholder="Mật khẩu" style={{ borderRadius: 8 }} />
                 </Form.Item>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+                {/* --- ĐOẠN ĐÃ SỬA --- */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                     <Form.Item name="remember" valuePropName="checked" noStyle>
                         <Checkbox>Ghi nhớ tôi</Checkbox>
                     </Form.Item>
-                    <a href="#" style={{ color: '#d4145a' }}>Quên mật khẩu?</a>
+                    
+                    {/* Bỏ thẻ div bao quanh, để button nằm trực tiếp trong flex container */}
+                    <Button type="link" onClick={() => navigate('/forgot-password')} style={{ color: '#d4145a', padding: 0 }}>
+                        Quên mật khẩu?
+                    </Button>
                 </div>
+                {/* --- HẾT ĐOẠN SỬA --- */}
 
                 <Form.Item>
                     <Button 

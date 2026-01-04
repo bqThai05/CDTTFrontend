@@ -1,6 +1,7 @@
 // src/components/MainLayout.jsx
 import React, { useState } from 'react';
 import { Layout, Menu, Button, Avatar, Badge, theme, Dropdown, Typography, message } from 'antd';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   AppstoreOutlined, 
   BarChartOutlined, 
@@ -11,12 +12,13 @@ import {
   MenuFoldOutlined,
   BellOutlined,
   YoutubeOutlined,
+  FacebookFilled, // Vẫn giữ icon Facebook
   UserOutlined,
   LogoutOutlined,
   DownOutlined,
-  SettingOutlined
+  SettingOutlined,
+  RocketFilled 
 } from '@ant-design/icons';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -30,7 +32,6 @@ const MainLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // --- ĐÃ SỬA: Xóa bỏ setUserInfo vì không dùng đến ---
   const [userInfo] = useState(() => {
     const storedUser = localStorage.getItem('user_info');
     if (storedUser) {
@@ -56,18 +57,23 @@ const MainLayout = () => {
 
   const userMenu = {
     items: [
-        { key: 'profile', label: 'Thông tin tài khoản', icon: <UserOutlined /> },
+        { key: 'profile', label: 'Thông tin tài khoản', icon: <UserOutlined />, onClick: () => navigate('/profile') },
         { key: 'settings', label: 'Cài đặt hệ thống', icon: <SettingOutlined /> },
         { type: 'divider' },
         { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, danger: true, onClick: handleLogout },
     ]
   };
 
+  // MENU ITEMS
   const menuItems = [
     { key: '/dashboard', icon: <AppstoreOutlined />, label: 'Tổng quan' },
     { key: '/create-post', icon: <VideoCameraAddOutlined />, label: 'Tạo bài đăng' },
     { key: '/content', icon: <CloudUploadOutlined />, label: 'Nội dung' },
     { key: '/youtube-integration', icon: <YoutubeOutlined />, label: 'YouTube' },
+    
+    // 👇👇👇 MỤC FACEBOOK 👇👇👇
+    { key: '/facebook-integration', icon: <FacebookFilled />, label: 'Facebook' }, 
+
     { key: '/feed', icon: <BarChartOutlined />, label: 'Lịch sử tin' },
     { key: '/workspaces', icon: <TeamOutlined />, label: 'Nhóm làm việc' },
   ];
@@ -75,11 +81,32 @@ const MainLayout = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider trigger={null} collapsible collapsed={collapsed} width={240} style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
+        
+        {/* --- PHẦN LOGO --- */}
         <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #f0f0f0' }}>
-            <h2 style={{ color: '#1677ff', margin: 0, fontWeight: 'bold', fontSize: collapsed ? '18px' : '24px' }}>
-                {collapsed ? 'SP' : 'SOCIAL PRO'}
-            </h2>
+            {collapsed ? (
+                <RocketFilled 
+                    style={{ 
+                        fontSize: '32px', 
+                        color: '#d4145a' 
+                    }} 
+                />
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <RocketFilled style={{ fontSize: '24px', color: '#d4145a' }} />
+                    <h2 style={{ 
+                        color: '#d4145a', 
+                        margin: 0, 
+                        fontWeight: 'bold', 
+                        fontSize: '20px',
+                        fontFamily: 'sans-serif'
+                    }}>
+                        SOCIAL PRO
+                    </h2>
+                </div>
+            )}
         </div>
+
         <Menu
           theme="light"
           mode="inline"
@@ -134,6 +161,9 @@ const MainLayout = () => {
         >
           <Outlet /> 
         </Content>
+
+        {/* Đã xóa ChatBoxAI ở đây */}
+
       </Layout>
     </Layout>
   );
