@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+// 👇 1. Đổi BrowserRouter thành HashRouter
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
 // Import các trang
@@ -16,11 +17,10 @@ import Workspaces from './pages/Workspaces';
 import WorkspaceDetail from './pages/WorkspaceDetail';
 import AcceptInvitation from './pages/AcceptInvitation';
 import LandingPage from './pages/LandingPage';
-import ForgotPassword from './pages/ForgotPassword'; // <--- Thêm dòng này
+import ForgotPassword from './pages/ForgotPassword'; 
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import FacebookIntegration from './pages/FacebookIntegration';
-// ĐÃ XÓA: import NotFound ...
 
 // Import Layout
 import MainLayout from './components/MainLayout';
@@ -39,7 +39,7 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* 1. TRANG LANDING */}
+        {/* 1. TRANG LANDING (Trang chủ) */}
         <Route path="/" element={<LandingPage />} />
 
         {/* 2. CÁC TRANG AUTH */}
@@ -58,20 +58,18 @@ const AnimatedRoutes = () => {
           }
         >
           <Route path="/profile" element={<Profile />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="create-post" element={<CreatePost />} />
-          <Route path="accounts" element={<Accounts />} />
-          <Route path="feed" element={<PostHistory />} />
-          <Route path="content" element={<ChannelContent />} />
-          <Route path="youtube-integration" element={<YoutubeIntegration />} />
+          <Route path="/dashboard" element={<Dashboard />} /> {/* Thêm dấu / cho chắc */}
+          <Route path="/create-post" element={<CreatePost />} />
+          <Route path="/accounts" element={<Accounts />} />
+          <Route path="/feed" element={<PostHistory />} />
+          <Route path="/content" element={<ChannelContent />} />
+          <Route path="/youtube-integration" element={<YoutubeIntegration />} />
           <Route path="/facebook-integration" element={<FacebookIntegration />} />
-          <Route path="workspaces" element={<Workspaces />} />
-          <Route path="workspaces/:workspaceId" element={<WorkspaceDetail />} />
+          <Route path="/workspaces" element={<Workspaces />} />
+          <Route path="/workspaces/:workspaceId" element={<WorkspaceDetail />} />
         </Route>
 
-        {/* ĐÃ XÓA: Route NotFound (Trang lỗi 404) */}
-        {/* Nếu người dùng gõ linh tinh, tạm thời cho nó về Login luôn */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
         
       </Routes>
     </AnimatePresence>
@@ -80,9 +78,10 @@ const AnimatedRoutes = () => {
 
 function App() {
   return (
-    <BrowserRouter>
+    // 👇 2. Dùng HashRouter bọc ngoài cùng
+    <HashRouter>
       <AnimatedRoutes />
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

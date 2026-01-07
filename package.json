@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://nhanthach2603.github.io/fornteteet",
+  "homepage": "https://bqthai05.github.io/CDTTFrontend  ",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,6 +11,8 @@
     "deploy": "gh-pages -d dist",
     "lint": "eslint .",
     "preview": "vite preview"
+  
+  
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
