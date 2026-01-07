@@ -23,7 +23,6 @@ import { useNavigate } from 'react-router-dom';
 
 const { Title, Text, Paragraph } = Typography;
 const { Header, Content, Footer } = Layout;
-const { Panel } = Collapse;
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -168,7 +167,7 @@ const LandingPage = () => {
                     <div style={{ height: 550, background: '#f5f7fa', position: 'relative', display: 'flex' }}>
                         <div style={{ width: 220, background: '#fff', borderRight: '1px solid #eee', padding: 20 }}>
                             <div style={{height: 30, width: '60%', background: '#eee', borderRadius: 6, marginBottom: 30}}></div>
-                            <Space direction="vertical" style={{width: '100%'}} size={15}>
+                            <Space orientation="vertical" style={{width: '100%'}} size={15}>
                                 <div style={{height: 15, width: '80%', background: '#f0f0f0', borderRadius: 4}}></div>
                                 <div style={{height: 15, width: '90%', background: '#f0f0f0', borderRadius: 4}}></div>
                                 <div style={{height: 15, width: '70%', background: '#ffeef1', borderRadius: 4}}></div>
@@ -221,7 +220,7 @@ const LandingPage = () => {
                     </ul>
                 </Col>
                 <Col xs={24} md={12}>
-                    <Card style={styles.glassCard} bordered={false}>
+                    <Card style={styles.glassCard} variant="borderless">
                         <div style={{ padding: 25 }}>
                             <div style={{ background: '#fff0f6', padding: '10px 20px', borderRadius: 20, marginBottom: 20, width: 'fit-content', border: `1px solid ${colors.primary}20` }}>
                                 <Text strong style={{color: colors.primary}}>User:</Text> "Viết caption bán giày Tết"
@@ -247,7 +246,7 @@ const LandingPage = () => {
                 <Col xs={24} md={12} order={2}>
                      <div style={{ position: 'relative' }}>
                         <div style={{ position: 'absolute', top: -40, left: -40, width: 200, height: 200, background: 'radial-gradient(circle, rgba(251,176,59,0.15) 0%, rgba(255,255,255,0) 70%)' }}></div>
-                        <Card style={{...styles.glassCard, borderColor: '#ffccc7'}} bordered={false}>
+                        <Card style={{...styles.glassCard, borderColor: '#ffccc7'}} variant="borderless">
                              <div style={{ textAlign: 'center', padding: 40 }}>
                                  <div style={{...styles.iconBox, margin: '0 auto 20px', background: '#fff1f0', color: '#cf1322', width: 60, height: 60, fontSize: 30}}><PieChartFilled /></div>
                                  <Title level={4} style={{marginBottom: 5}}>Tăng trưởng Kênh</Title>
@@ -341,17 +340,29 @@ const LandingPage = () => {
         {/* 6. FAQ */}
         <div style={{ padding: '100px 20px', maxWidth: 800, margin: '0 auto' }}>
             <Title level={2} style={{ textAlign: 'center', marginBottom: 50 }}>Câu hỏi thường gặp</Title>
-            <Collapse ghost accordion expandIconPosition="end" size="large">
-                <Panel header={<span style={{fontWeight: 600, fontSize: 16}}>Tôi có thể hủy gói Pro bất cứ lúc nào không?</span>} key="1">
-                    <p style={{color: '#666'}}>Hoàn toàn được. Bạn có thể hủy gia hạn bất kỳ lúc nào trong phần Cài đặt mà không mất phí phạt.</p>
-                </Panel>
-                <Panel header={<span style={{fontWeight: 600, fontSize: 16}}>Social Pro có an toàn cho tài khoản của tôi không?</span>} key="2">
-                    <p style={{color: '#666'}}>Chúng tôi sử dụng API chính thức của Facebook và YouTube. Mật khẩu của bạn không bao giờ được lưu trữ trên hệ thống của chúng tôi.</p>
-                </Panel>
-                <Panel header={<span style={{fontWeight: 600, fontSize: 16}}>AI có hỗ trợ tiếng Việt tốt không?</span>} key="3">
-                    <p style={{color: '#666'}}>Rất tốt! AI được tối ưu hóa cho ngôn ngữ Tiếng Việt, hiểu được tiếng lóng và các trend mới nhất hiện nay.</p>
-                </Panel>
-            </Collapse>
+            <Collapse 
+                ghost 
+                accordion 
+                expandIconPlacement="end" 
+                size="large"
+                items={[
+                    {
+                        key: '1',
+                        label: <span style={{fontWeight: 600, fontSize: 16}}>Tôi có thể hủy gói Pro bất cứ lúc nào không?</span>,
+                        children: <p style={{color: '#666'}}>Hoàn toàn được. Bạn có thể hủy gia hạn bất kỳ lúc nào trong phần Cài đặt mà không mất phí phạt.</p>,
+                    },
+                    {
+                        key: '2',
+                        label: <span style={{fontWeight: 600, fontSize: 16}}>Social Pro có an toàn cho tài khoản của tôi không?</span>,
+                        children: <p style={{color: '#666'}}>Chúng tôi sử dụng API chính thức của Facebook và YouTube. Mật khẩu của bạn không bao giờ được lưu trữ trên hệ thống của chúng tôi.</p>,
+                    },
+                    {
+                        key: '3',
+                        label: <span style={{fontWeight: 600, fontSize: 16}}>AI có hỗ trợ tiếng Việt tốt không?</span>,
+                        children: <p style={{color: '#666'}}>Rất tốt! AI được tối ưu hóa cho ngôn ngữ Tiếng Việt, hiểu được tiếng lóng và các trend mới nhất hiện nay.</p>,
+                    },
+                ]}
+            />
         </div>
 
         {/* 7. FOOTER */}

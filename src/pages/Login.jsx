@@ -19,11 +19,11 @@ const Login = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const formData = new URLSearchParams();
-      formData.append('username', values.email); 
-      formData.append('password', values.password);
+      const params = new URLSearchParams();
+      params.append('username', values.email);
+      params.append('password', values.password);
 
-      const response = await axios.post(`${API_URL}/auth/login`, formData, {
+      const response = await axios.post(`${API_URL}/auth/login`, params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
 

@@ -17,6 +17,7 @@ import {
   LogoutOutlined,
   DownOutlined,
   SettingOutlined,
+  UsergroupAddOutlined,
   RocketFilled 
 } from '@ant-design/icons';
 
@@ -70,10 +71,8 @@ const MainLayout = () => {
     { key: '/create-post', icon: <VideoCameraAddOutlined />, label: 'Tạo bài đăng' },
     { key: '/content', icon: <CloudUploadOutlined />, label: 'Nội dung' },
     { key: '/youtube-integration', icon: <YoutubeOutlined />, label: 'YouTube' },
-    
-    // 👇👇👇 MỤC FACEBOOK 👇👇👇
     { key: '/facebook-integration', icon: <FacebookFilled />, label: 'Facebook' }, 
-
+    { key: '/accounts', icon: <UsergroupAddOutlined />, label: 'Tài khoản' },
     { key: '/feed', icon: <BarChartOutlined />, label: 'Lịch sử tin' },
     { key: '/workspaces', icon: <TeamOutlined />, label: 'Nhóm làm việc' },
   ];

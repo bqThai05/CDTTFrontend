@@ -139,7 +139,7 @@ const WorkspaceInbox = ({ workspaceId }) => {
 
       <Modal
         title="Trả lời bình luận"
-        visible={isReplyModalVisible}
+        open={isReplyModalVisible}
         onCancel={() => setIsReplyModalVisible(false)}
         footer={null}
       >

@@ -1,228 +1,214 @@
 // src/pages/ChannelContent.jsx
-import React, { useState, useEffect } from 'react';
-import { Table, Card, Button, Avatar, Typography, Tag, Space, Tooltip, Image, Tabs, Input, Segmented } from 'antd';
+import React, { useState } from 'react';
+import { Table, Card, Button, Avatar, Typography, Row, Col, Tag, Space, Tooltip, Image, Breadcrumb } from 'antd';
 import { 
   YoutubeFilled, 
   FacebookFilled, 
+  ArrowLeftOutlined,
   EyeOutlined,
   LikeOutlined,
   MessageOutlined,
-  SearchOutlined,
-  CheckCircleOutlined,
-  SyncOutlined,
-  FilterOutlined,
-  VideoCameraAddOutlined,
-  MoreOutlined
+  GlobalOutlined,
+  LockOutlined,
+  MoreOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  VideoCameraAddOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
 const ChannelContent = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [platformFilter, setPlatformFilter] = useState('all'); // all, youtube, facebook
+  // 1. TRẠNG THÁI: Tài khoản nào đang được chọn? (Mặc định là null -> Hiện danh sách chọn)
+  const [selectedAccount, setSelectedAccount] = useState(null);
 
-  // Dữ liệu giả lập (Mock Data) để Demo cho đẹp
-  // Khi nào API ổn định thì thay bằng fetch từ API sau
-  const mockData = [
+  // --- DỮ LIỆU GIẢ LẬP (MOCK DATA) ---
+  
+  // Danh sách các tài khoản đang kết nối
+  const mockAccounts = [
+    { id: 1, name: 'Review Công Nghệ Z', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', sub: '125K', type: 'Channel' },
+    { id: 2, name: 'Shop Quần Áo Nam', platform: 'facebook', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack', sub: '45K', type: 'Page' },
+    { id: 3, name: 'Vlog Đời Sống', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka', sub: '12K', type: 'Channel' },
+  ];
+
+  // Danh sách video chi tiết (Khi bấm vào sẽ hiện cái này)
+  const mockVideos = [
     {
         id: 1,
-        title: 'Review iPhone 16 Pro Max - Đỉnh cao công nghệ 2025',
-        thumbnail: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=2070&auto=format&fit=crop',
-        platform: 'youtube',
-        status: 'published',
-        views: 125000,
-        likes: 4500,
-        comments: 340,
-        date: '2025-01-05'
+        title: 'Đánh giá iPhone 16 Pro Max - Có đáng tiền?',
+        description: 'Chi tiết về hiệu năng, camera và pin sau 1 tuần sử dụng.',
+        thumbnail: 'https://img.youtube.com/vi/ScMzIvxBSi4/mqdefault.jpg',
+        duration: '15:30',
+        privacy: 'public',
+        date: '2025-12-20',
+        views: 120500,
+        likes: 5400,
+        comments: 120
     },
     {
         id: 2,
-        title: 'Vlog: Một ngày làm việc tại Social Pro',
-        thumbnail: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=2070&auto=format&fit=crop',
-        platform: 'youtube',
-        status: 'processing',
-        views: 0,
-        likes: 0,
-        comments: 0,
-        date: '2025-01-07'
+        title: 'Hướng dẫn Setup góc làm việc tối giản',
+        description: 'Chia sẻ các món đồ decor bàn làm việc giá rẻ.',
+        thumbnail: 'https://img.youtube.com/vi/5qap5aO4i9A/mqdefault.jpg',
+        duration: '08:45',
+        privacy: 'public',
+        date: '2025-12-18',
+        views: 45000,
+        likes: 2100,
+        comments: 85
     },
     {
         id: 3,
-        title: 'Khuyến mãi Tết Nguyên Đán - Giảm giá 50%',
-        thumbnail: 'https://images.unsplash.com/photo-1548625361-17c2f6d4825d?q=80&w=1937&auto=format&fit=crop',
-        platform: 'facebook',
-        status: 'published',
-        views: 5600,
-        likes: 230,
-        comments: 45,
-        date: '2025-01-06'
-    },
-    {
-        id: 4,
-        title: 'Hướng dẫn sử dụng công cụ Marketing mới',
-        thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2015&auto=format&fit=crop',
-        platform: 'facebook',
-        status: 'draft',
+        title: 'Video nháp: Teaser dự án mới',
+        description: 'Chưa công bố.',
+        thumbnail: 'https://via.placeholder.com/120x68?text=Draft',
+        duration: '01:00',
+        privacy: 'private',
+        date: '2025-12-15',
         views: 0,
         likes: 0,
-        comments: 0,
-        date: '2025-01-08'
+        comments: 0
     }
   ];
 
-  const [data, setData] = useState(mockData);
+  // --- HÀM RENDER ---
 
-  // Giả lập loading khi chuyển tab
- // Giả lập loading khi chuyển tab
-  useEffect(() => {
-      // eslint-disable-next-line 
-      setLoading(true); 
-      
-      const timer = setTimeout(() => {
-          if (platformFilter === 'all') setData(mockData);
-          else setData(mockData.filter(item => item.platform === platformFilter));
-          setLoading(false);
-      }, 500);
+  // Giao diện 1: DANH SÁCH TÀI KHOẢN (Hiện ra đầu tiên)
+  const renderAccountSelection = () => (
+    <div>
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <Title level={2}>Chọn kênh để quản lý</Title>
+        <Text type="secondary">Chọn một tài khoản YouTube hoặc Facebook để xem nội dung chi tiết</Text>
+      </div>
 
-      // Dọn dẹp timer khi component unmount
-      return () => clearTimeout(timer);
-  }, [platformFilter]);
+      <Row gutter={[24, 24]}>
+        {mockAccounts.map((acc) => (
+          <Col xs={24} sm={12} md={8} lg={6} key={acc.id}>
+            <Card
+              hoverable
+              onClick={() => setSelectedAccount(acc)} // Bấm vào thì lưu tài khoản lại
+              style={{ borderRadius: 12, textAlign: 'center', borderTop: `4px solid ${acc.platform === 'youtube' ? '#ff0000' : '#1877f2'}` }}
+            >
+               <Avatar 
+                 src={acc.avatar} 
+                 size={80} 
+                 style={{ marginBottom: 16, border: '2px solid #f0f0f0' }}
+               />
+               <Title level={4} style={{ fontSize: 18, marginBottom: 4 }}>{acc.name}</Title>
+               <Tag icon={acc.platform === 'youtube' ? <YoutubeFilled /> : <FacebookFilled />} color={acc.platform === 'youtube' ? 'error' : 'blue'}>
+                  {acc.type}
+               </Tag>
+               <div style={{ marginTop: 12, color: '#666' }}>
+                  <b>{acc.sub}</b> người theo dõi
+               </div>
+            </Card>
+          </Col>
+        ))}
+        
+        {/* Nút thêm mới giả lập */}
+        <Col xs={24} sm={12} md={8} lg={6}>
+            <Card 
+                hoverable 
+                style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, border: '1px dashed #d9d9d9', background: '#fafafa' }}
+            >
+                <div style={{ textAlign: 'center', color: '#999' }}>
+                    <div style={{ fontSize: 32 }}>+</div>
+                    <div>Thêm kết nối mới</div>
+                </div>
+            </Card>
+        </Col>
+      </Row>
+    </div>
+  );
 
-  // Cấu hình cột cho bảng
-  const columns = [
-    {
-      title: 'Nội dung (Video / Bài viết)',
-      width: 400,
-      render: (_, record) => (
-        <div style={{ display: 'flex', gap: 16 }}>
-          <div style={{ position: 'relative', width: 120, height: 68, flexShrink: 0 }}>
-            <Image 
-                src={record.thumbnail} 
-                width={120} height={68} 
-                style={{ borderRadius: 8, objectFit: 'cover' }} 
-                preview={false} 
-            />
-            <div style={{ 
-                position: 'absolute', bottom: 4, right: 4, 
-                background: 'rgba(0,0,0,0.7)', color: '#fff', 
-                fontSize: 10, padding: '1px 4px', borderRadius: 4 
-            }}>
-                {record.platform === 'youtube' ? '12:30' : 'IMG'}
+  // Giao diện 2: CHI TIẾT NỘI DUNG (Hiện ra sau khi chọn)
+  const renderChannelDetail = () => {
+    // Cấu hình cột cho bảng video
+    const columns = [
+        {
+          title: 'Video / Bài viết',
+          width: 400,
+          render: (_, record) => (
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ position: 'relative', width: 120 }}>
+                <Image src={record.thumbnail} width={120} height={68} style={{ borderRadius: 6, objectFit: 'cover' }} preview={false} />
+                <div style={{ position: 'absolute', bottom: 4, right: 4, background: 'rgba(0,0,0,0.8)', color: '#fff', fontSize: 10, padding: '1px 4px', borderRadius: 2 }}>{record.duration}</div>
+              </div>
+              <div>
+                <Text strong style={{ fontSize: 14 }} ellipsis>{record.title}</Text>
+                <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{record.description}</div>
+                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                    <Tooltip title="Sửa"><Button size="small" icon={<EditOutlined />} type="text" /></Tooltip>
+                    <Tooltip title="Xem"><Button size="small" icon={<YoutubeFilled />} type="text" /></Tooltip>
+                    <Tooltip title="Xóa"><Button size="small" icon={<DeleteOutlined />} type="text" danger /></Tooltip>
+                </div>
+              </div>
             </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Text strong style={{ fontSize: 14, marginBottom: 4 }} ellipsis={{tooltip: record.title}}>
-                {record.title}
-            </Text>
-            <Space>
-                {record.platform === 'youtube' ? (
-                    <Tag icon={<YoutubeFilled />} color="#ff0000" style={{border: 'none', color: 'white'}}>YouTube</Tag>
-                ) : (
-                    <Tag icon={<FacebookFilled />} color="#1877f2" style={{border: 'none', color: 'white'}}>Facebook</Tag>
-                )}
-            </Space>
-          </div>
-        </div>
-      )
-    },
-    {
-        title: 'Trạng thái',
-        dataIndex: 'status',
-        width: 150,
-        render: (val) => {
-            if (val === 'published') return <Tag icon={<CheckCircleOutlined />} color="success">Đã đăng</Tag>;
-            if (val === 'processing') return <Tag icon={<SyncOutlined spin />} color="processing">Đang xử lý</Tag>;
-            return <Tag color="default">Bản nháp</Tag>;
+          )
+        },
+        {
+            title: 'Trạng thái',
+            dataIndex: 'privacy',
+            render: (val) => val === 'public' 
+                ? <Tag color="success" icon={<GlobalOutlined />}>Công khai</Tag> 
+                : <Tag color="default" icon={<LockOutlined />}>Riêng tư</Tag>
+        },
+        {
+            title: 'Ngày đăng',
+            dataIndex: 'date',
+            render: (val) => <div>{val}<br/><span style={{fontSize: 11, color:'#999'}}>Đã xuất bản</span></div>
+        },
+        {
+            title: 'Số liệu',
+            render: (_, record) => (
+                <Space size="large" style={{ color: '#666' }}>
+                    <div style={{ textAlign: 'center' }}><div>{record.views.toLocaleString()}</div><EyeOutlined /></div>
+                    <div style={{ textAlign: 'center' }}><div>{record.comments.toLocaleString()}</div><MessageOutlined /></div>
+                    <div style={{ textAlign: 'center' }}><div>{record.likes.toLocaleString()}</div><LikeOutlined /></div>
+                </Space>
+            )
         }
-    },
-    {
-        title: 'Ngày đăng',
-        dataIndex: 'date',
-        width: 150,
-        render: (val) => <span style={{ color: '#666' }}>{val}</span>
-    },
-    {
-        title: 'Số liệu',
-        render: (_, record) => (
-            <Space size="large" style={{ color: '#666' }}>
-                <Tooltip title="Lượt xem"><div style={{ minWidth: 50 }}><EyeOutlined /> {record.views.toLocaleString()}</div></Tooltip>
-                <Tooltip title="Thích"><div style={{ minWidth: 50 }}><LikeOutlined /> {record.likes.toLocaleString()}</div></Tooltip>
-                <Tooltip title="Bình luận"><div style={{ minWidth: 50 }}><MessageOutlined /> {record.comments.toLocaleString()}</div></Tooltip>
-            </Space>
-        )
-    },
-    {
-        title: '',
-        key: 'action',
-        width: 50,
-        render: () => <Button type="text" icon={<MoreOutlined />} />
-    }
-  ];
+    ];
+
+    return (
+        <div>
+            {/* Thanh điều hướng quay lại */}
+            <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Space>
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => setSelectedAccount(null)}>Quay lại</Button>
+                    <Breadcrumb items={[{ title: 'Danh sách kênh' }, { title: selectedAccount.name }]} />
+                </Space>
+                <Button type="primary" icon={<VideoCameraAddOutlined />}>Tạo bài mới</Button>
+            </div>
+
+            {/* Thông tin kênh đang xem */}
+            <Card style={{ marginBottom: 24, borderRadius: 12 }} styles={{ body: { padding: 16 } }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <Avatar src={selectedAccount.avatar} size={64} style={{ border: '2px solid #ddd' }} />
+                    <div>
+                        <Title level={4} style={{ margin: 0 }}>{selectedAccount.name}</Title>
+                        <Text type="secondary">Đang quản lý nội dung trên {selectedAccount.platform === 'youtube' ? 'YouTube' : 'Facebook'}</Text>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Bảng dữ liệu */}
+            <Card title="Nội dung đã đăng" variant="borderless" style={{ borderRadius: 12 }}>
+                <Table 
+                    rowKey="id" 
+                    columns={columns} 
+                    dataSource={mockVideos} 
+                    pagination={{ pageSize: 5 }} 
+                />
+            </Card>
+        </div>
+    );
+  };
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1400, margin: '0 auto' }}>
-        
-        {/* HEADER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <div>
-                <Title level={2} style={{ margin: 0 }}>Nội dung kênh</Title>
-                <Text type="secondary">Quản lý và theo dõi hiệu suất tất cả bài đăng của bạn</Text>
-            </div>
-            <Button 
-                type="primary" 
-                size="large" 
-                icon={<VideoCameraAddOutlined />}
-                onClick={() => navigate('/create-post')}
-                style={{ 
-                    background: 'linear-gradient(90deg, #d4145a, #fbb03b)', 
-                    border: 'none', 
-                    fontWeight: 600,
-                    boxShadow: '0 4px 15px rgba(212, 20, 90, 0.3)'
-                }}
-            >
-                Tạo bài mới
-            </Button>
-        </div>
-
-        {/* BỘ LỌC & TOOLBAR */}
-        <Card bordered={false} bodyStyle={{ padding: 16 }} style={{ borderRadius: 12, marginBottom: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-                
-                {/* Tabs chuyển đổi nền tảng */}
-                <Segmented
-                    options={[
-                        { label: 'Tất cả', value: 'all', icon: <FilterOutlined /> },
-                        { label: 'YouTube', value: 'youtube', icon: <YoutubeFilled style={{color: 'red'}} /> },
-                        { label: 'Facebook', value: 'facebook', icon: <FacebookFilled style={{color: '#1877f2'}} /> },
-                    ]}
-                    value={platformFilter}
-                    onChange={setPlatformFilter}
-                    size="large"
-                />
-
-                {/* Ô tìm kiếm */}
-                <Input 
-                    prefix={<SearchOutlined style={{ color: '#ccc' }} />} 
-                    placeholder="Tìm kiếm video/bài viết..." 
-                    style={{ width: 300, borderRadius: 8 }} 
-                    size="large"
-                />
-            </div>
-        </Card>
-
-        {/* BẢNG DỮ LIỆU */}
-        <Card bordered={false} style={{ borderRadius: 12, overflow: 'hidden' }} bodyStyle={{ padding: 0 }}>
-            <Table 
-                rowKey="id" 
-                columns={columns} 
-                dataSource={data} 
-                loading={loading}
-                pagination={{ pageSize: 6 }} 
-                rowClassName="editable-row"
-            />
-        </Card>
+    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+        {/* Logic điều hướng: Nếu chưa chọn acc -> Render List, Nếu chọn rồi -> Render Detail */}
+        {!selectedAccount ? renderAccountSelection() : renderChannelDetail()}
     </div>
   );
 };

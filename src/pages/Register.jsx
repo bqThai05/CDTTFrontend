@@ -34,6 +34,7 @@ const Register = () => {
       const payload = {
         email: values.email,
         username: values.username,
+        full_name: values.username, // Thêm full_name dự phòng cho backend
         phone_number: values.phone_number,
         password: values.password
       };
@@ -54,6 +55,8 @@ const Register = () => {
          errorMsg = Array.isArray(error.response.data.detail) 
           ? error.response.data.detail.map(err => err.msg).join('; ')
           : error.response.data.detail;
+      } else if (error.response?.status === 500) {
+        errorMsg = 'Lỗi hệ thống (500). Vui lòng thử lại sau hoặc liên hệ Admin.';
       } else if (typeof error.response?.data?.message === 'string') {
         errorMsg = error.response.data.message;
       }
