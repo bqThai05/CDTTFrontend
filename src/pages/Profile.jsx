@@ -1,132 +1,157 @@
 // src/pages/Profile.jsx
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, Row, Col, Avatar, Form, Input, Button, Upload, 
-  Tabs, message, Typography, Divider, Tag 
+  Card, Row, Col, Avatar, Form, Input, Button, 
+  Tabs, message, Typography, Tag, Spin, Alert 
 } from 'antd';
 import { 
-  UserOutlined, 
-  UploadOutlined, 
-  SafetyCertificateOutlined, 
-  MailOutlined,
-  SaveOutlined,
-  LockOutlined
+  UserOutlined, SaveOutlined, LockOutlined, 
+  MailOutlined, PhoneOutlined, SafetyCertificateFilled,
+  CheckCircleFilled, RocketFilled
 } from '@ant-design/icons';
-import { changeUserPassword } from '../services/api';
+
+// Import API
+import { getCurrentUser, updateUserProfile, changeUserPassword } from '../services/api';
 
 const { Title, Text } = Typography;
 
 const Profile = () => {
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState({
-    name: 'Admin User',
-    email: 'admin@socialpro.com',
-    avatar: '',
-    role: 'Administrator'
-  });
+  const [loading, setLoading] = useState(true); // Loading lúc mới vào trang
+  const [updating, setUpdating] = useState(false); // Loading khi bấm nút lưu
+  const [user, setUser] = useState(null);
+  
+  const [profileForm] = Form.useForm();
+  const [passwordForm] = Form.useForm();
 
-  // Load thông tin user (Từ API hoặc LocalStorage)
+  // 1. Load thông tin user khi vào trang
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        // Ưu tiên lấy từ API nếu backend đã làm
-        // const res = await getCurrentUser();
-        // setUser(res.data);
-        
-        // Hiện tại dùng tạm LocalStorage cho chắc ăn
-        const stored = JSON.parse(localStorage.getItem('user_info') || '{}');
-        if (stored.name) {
-            setUser(prev => ({ ...prev, ...stored }));
-        }
-      } catch (error) {
-        console.error("Lỗi tải profile", error);
-      }
-    };
-    fetchProfile();
+    fetchUserData();
   }, []);
 
-  // Xử lý cập nhật thông tin chung
-  const handleUpdateProfile = async (values) => {
+  const fetchUserData = async () => {
     setLoading(true);
     try {
-      // await updateUserProfile(values); // Gọi API (nếu có)
+      const res = await getCurrentUser();
+      setUser(res.data);
       
-      // Update tạm vào LocalStorage để thấy thay đổi liền
-      const newUserInfo = { ...user, ...values };
-      localStorage.setItem('user_info', JSON.stringify(newUserInfo));
-      setUser(newUserInfo);
-      
-      message.success('Cập nhật hồ sơ thành công!');
-      // Reload trang để Header cập nhật tên mới
-      setTimeout(() => window.location.reload(), 1000);
-    } catch  {
-      message.error('Lỗi khi cập nhật hồ sơ.');
+      // Điền dữ liệu vào form
+      profileForm.setFieldsValue({
+        username: res.data.username,
+        email: res.data.email,
+        phone_number: res.data.phone_number
+      });
+    } catch (error) {
+      console.error("Lỗi lấy thông tin:", error);
+      message.error("Không thể tải thông tin cá nhân.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Xử lý đổi mật khẩu
+  // 2. Xử lý cập nhật thông tin (Tên, SĐT)
+  const handleUpdateProfile = async (values) => {
+    setUpdating(true);
+    try {
+      // Backend cho phép update: username, email, phone_number
+      await updateUserProfile({
+        username: values.username,
+        phone_number: values.phone_number,
+        // Email thường không cho đổi lung tung, nên mình chỉ gửi nếu cần
+      });
+      
+      message.success('Cập nhật hồ sơ thành công!');
+      fetchUserData(); // Load lại dữ liệu mới
+    } catch (error) {
+      message.error(error.response?.data?.detail || 'Lỗi khi cập nhật hồ sơ.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // 3. Xử lý đổi mật khẩu
   const handleChangePassword = async (values) => {
     if (values.newPassword !== values.confirmPassword) {
         return message.error('Mật khẩu xác nhận không khớp!');
     }
-    setLoading(true);
+    
+    setUpdating(true);
     try {
-        // Gọi API đổi mật khẩu (Endpoint /password-reset/change-password)
         await changeUserPassword({
             current_password: values.currentPassword,
             new_password: values.newPassword
         });
         message.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+        passwordForm.resetFields();
         
-        // Đăng xuất để user đăng nhập lại
-        localStorage.clear();
-        window.location.href = '/login';
+        // Logout user để họ đăng nhập lại với pass mới
+        setTimeout(() => {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+        }, 1500);
+        
     } catch (error) {
-        message.error(error.response?.data?.detail || 'Mật khẩu cũ không đúng hoặc lỗi hệ thống.');
+        message.error(error.response?.data?.detail || 'Mật khẩu cũ không đúng.');
     } finally {
-        setLoading(false);
+        setUpdating(false);
     }
   };
 
+  // Avatar tự động theo tên
+  const avatarUrl = user?.username 
+    ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}` 
+    : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin';
+
+  if (loading) return <div style={{textAlign: 'center', padding: 50}}><Spin size="large" tip="Đang tải hồ sơ..." /></div>;
+
   // Nội dung Tab 1: Thông tin chung
   const GeneralTab = () => (
-    <Form layout="vertical" onFinish={handleUpdateProfile} initialValues={user}>
+    <Form 
+        form={profileForm} 
+        layout="vertical" 
+        onFinish={handleUpdateProfile}
+    >
         <Row gutter={30}>
-            <Col xs={24} md={8} style={{ textAlign: 'center' }}>
-                <div style={{ position: 'relative', display: 'inline-block', marginBottom: 20 }}>
+            {/* Cột Avatar */}
+            <Col xs={24} md={8} style={{ textAlign: 'center', marginBottom: 20 }}>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
                     <Avatar 
                         size={120} 
-                        src={user.avatar} 
-                        icon={<UserOutlined />} 
-                        style={{ border: '4px solid #f0f0f0' }} 
+                        src={avatarUrl}
+                        style={{ border: '4px solid #f0f0f0', backgroundColor: '#fff' }} 
                     />
-                    <Upload showUploadList={false} beforeUpload={() => false}>
-                        <Button 
-                            shape="circle" 
-                            icon={<UploadOutlined />} 
-                            style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#d4145a', color: '#fff', border: 'none' }} 
-                        />
-                    </Upload>
-                </div>
-                <div>
-                    <Tag color="blue">{user.role}</Tag>
+                    <div style={{ marginTop: 15 }}>
+                        <Title level={4} style={{ margin: 0 }}>{user?.username}</Title>
+                        <Text type="secondary">Thành viên SocialPro</Text>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                        {user?.is_verified ? (
+                            <Tag icon={<CheckCircleFilled />} color="success">Đã xác minh</Tag>
+                        ) : (
+                            <Tag color="warning">Chưa xác minh</Tag>
+                        )}
+                    </div>
                 </div>
             </Col>
+
+            {/* Cột Form */}
             <Col xs={24} md={16}>
-                <Form.Item label="Họ và tên" name="name" rules={[{ required: true }]}>
+                <Form.Item label="Tên đăng nhập / Username" name="username" rules={[{ required: true }]}>
                     <Input prefix={<UserOutlined />} size="large" />
                 </Form.Item>
+                
                 <Form.Item label="Email (Không thể thay đổi)" name="email">
-                    <Input prefix={<MailOutlined />} size="large" disabled />
+                    <Input prefix={<MailOutlined />} size="large" disabled style={{ color: '#888', backgroundColor: '#f5f5f5' }} />
                 </Form.Item>
-                <Form.Item label="Giới thiệu bản thân" name="bio">
-                    <Input.TextArea rows={3} placeholder="Viết gì đó về bạn..." />
+                
+                <Form.Item label="Số điện thoại" name="phone_number">
+                    <Input prefix={<PhoneOutlined />} size="large" placeholder="Cập nhật SĐT..." />
                 </Form.Item>
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} style={{ marginTop: 10 }}>
-                    Lưu thay đổi
-                </Button>
+
+                <Form.Item>
+                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={updating} size="large">
+                        Lưu thay đổi
+                    </Button>
+                </Form.Item>
             </Col>
         </Row>
     </Form>
@@ -134,41 +159,53 @@ const Profile = () => {
 
   // Nội dung Tab 2: Bảo mật
   const SecurityTab = () => (
-    <Form layout="vertical" onFinish={handleChangePassword}>
+    <Form form={passwordForm} layout="vertical" onFinish={handleChangePassword}>
         <div style={{ maxWidth: 500, margin: '0 auto' }}>
-            <Title level={5}><LockOutlined /> Đổi mật khẩu</Title>
-            <Text type="secondary" style={{ display: 'block', marginBottom: 20 }}>
-                Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu cho người khác.
-            </Text>
+            <Alert 
+                message="Lưu ý bảo mật"
+                description="Mật khẩu nên có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số."
+                type="info"
+                showIcon
+                style={{ marginBottom: 24 }}
+            />
 
             <Form.Item 
                 name="currentPassword" 
                 label="Mật khẩu hiện tại" 
-                rules={[{ required: true, message: 'Nhập mật khẩu cũ!' }]}
+                rules={[{ required: true, message: 'Vui lòng nhập mật khẩu cũ' }]}
             >
-                <Input.Password size="large" />
+                <Input.Password prefix={<LockOutlined />} size="large" placeholder="Nhập mật khẩu đang dùng" />
             </Form.Item>
-
-            <Divider />
 
             <Form.Item 
                 name="newPassword" 
                 label="Mật khẩu mới" 
-                rules={[{ required: true, message: 'Nhập mật khẩu mới!' }, { min: 6, message: 'Tối thiểu 6 ký tự' }]}
+                rules={[{ required: true, message: 'Vui lòng nhập mật khẩu mới' }, { min: 6, message: 'Tối thiểu 6 ký tự' }]}
             >
-                <Input.Password size="large" />
+                <Input.Password prefix={<LockOutlined />} size="large" placeholder="Mật khẩu mới" />
             </Form.Item>
 
             <Form.Item 
                 name="confirmPassword" 
-                label="Nhập lại mật khẩu mới" 
-                rules={[{ required: true, message: 'Xác nhận mật khẩu!' }]}
+                label="Xác nhận mật khẩu mới" 
+                dependencies={['newPassword']}
+                rules={[
+                    { required: true, message: 'Vui lòng xác nhận mật khẩu' },
+                    ({ getFieldValue }) => ({
+                        validator(_, value) {
+                            if (!value || getFieldValue('newPassword') === value) {
+                                return Promise.resolve();
+                            }
+                            return Promise.reject(new Error('Mật khẩu xác nhận không khớp!'));
+                        },
+                    }),
+                ]}
             >
-                <Input.Password size="large" />
+                <Input.Password prefix={<LockOutlined />} size="large" placeholder="Nhập lại mật khẩu mới" />
             </Form.Item>
 
-            <Button type="primary" danger htmlType="submit" size="large" block loading={loading}>
-                Cập nhật mật khẩu
+            <Button type="primary" danger htmlType="submit" size="large" block loading={updating}>
+                Đổi mật khẩu
             </Button>
         </div>
     </Form>
@@ -176,7 +213,10 @@ const Profile = () => {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 24 }}>
-      <Title level={2} style={{ marginBottom: 30 }}>Cài đặt tài khoản</Title>
+      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <RocketFilled style={{ fontSize: 24, color: '#d4145a' }} />
+          <Title level={2} style={{ margin: 0 }}>Hồ sơ của tôi</Title>
+      </div>
       
       <Card 
         style={{ 
@@ -195,7 +235,7 @@ const Profile = () => {
                 },
                 { 
                     key: '2', 
-                    label: <span><SafetyCertificateOutlined /> Bảo mật & Mật khẩu</span>, 
+                    label: <span><SafetyCertificateFilled /> Bảo mật & Mật khẩu</span>, 
                     children: <SecurityTab /> 
                 },
             ]} 

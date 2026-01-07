@@ -1,62 +1,83 @@
 // src/pages/CreatePost.jsx
 import React, { useState, useEffect } from 'react';
-import { Card, Input, Button, Upload, Row, Col, Typography, DatePicker, message, Avatar, Divider, Modal, Spin, Radio, Select, Switch, Space } from 'antd';
+import { Card, Input, Button, Upload, Row, Col, Typography, DatePicker, message, Avatar, Divider, Modal, Select, Switch, Space, Spin, Radio } from 'antd';
 import { 
-  CloudUploadOutlined, 
-  FacebookFilled, 
-  YoutubeFilled, 
-  SendOutlined,
-  GlobalOutlined,
-  LikeOutlined,
-  CommentOutlined,
-  ShareAltOutlined,
-  CheckCircleFilled,
-  ScheduleOutlined,
-  ThunderboltFilled,
-  RobotOutlined,
-  VideoCameraOutlined,
-  FileTextOutlined,
-  DislikeOutlined,
-  EnvironmentOutlined,
-  TeamOutlined,
-  LockOutlined,
-  TagOutlined,
-  EyeInvisibleOutlined
+  CloudUploadOutlined, SendOutlined,
+  ThunderboltFilled, CheckCircleFilled, 
+  VideoCameraOutlined, FileTextOutlined,
+  GlobalOutlined, LockOutlined, EyeInvisibleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+
+// Import API
+import { 
+  getWorkspaces, 
+  getAllSocialAccounts, 
+  createWorkspacePost, 
+  publishWorkspacePostNow 
+} from '../services/api';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const CreatePost = () => {
-  // --- STATE CŨ ---
+  const [loadingData, setLoadingData] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Dữ liệu từ API
+  const [workspaces, setWorkspaces] = useState([]);
+  const [socialAccounts, setSocialAccounts] = useState([]);
+
+  // Form State
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(null);
+  const [selectedAccountIds, setSelectedAccountIds] = useState([]);
+  
+  // 👇 1. Biến postType và setPostType (đã được dùng ở dưới)
   const [postType, setPostType] = useState('video'); 
+  
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [fileList, setFileList] = useState([]);
   
-  // State AI
+  // State AI (Giả lập)
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
   const [aiTopic, setAiTopic] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
-  // State quản lý tài khoản
-  const myAccounts = [
-    { id: 1, name: 'Review Công Nghệ Z', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
-    { id: 2, name: 'Shop Quần Áo Nam', platform: 'facebook', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack' },
-    { id: 3, name: 'Vlog Đời Sống', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka' },
-  ];
-  const [selectedAccountIds, setSelectedAccountIds] = useState([1]); 
-
-  // --- STATE MỚI ---
+  // 👇 2. Biến visibility và setVisibility (đã được dùng ở dưới)
   const [visibility, setVisibility] = useState('public'); 
-  const [location, setLocation] = useState('');
-  const [tags, setTags] = useState([]);
+  
   const [isSchedule, setIsSchedule] = useState(false); 
   const [scheduleDate, setScheduleDate] = useState(null);
 
-  // --- LOGIC XỬ LÝ ---
+  // 1. Load dữ liệu Workspace & Accounts khi vào trang
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoadingData(true);
+      try {
+        const [wsRes, accRes] = await Promise.all([
+          getWorkspaces(),
+          getAllSocialAccounts()
+        ]);
+        
+        setWorkspaces(wsRes.data);
+        setSocialAccounts(accRes.data);
+
+        // Mặc định chọn workspace đầu tiên nếu có
+        if (wsRes.data.length > 0) {
+            setSelectedWorkspaceId(wsRes.data[0].id);
+        }
+      } catch (error) {
+        console.error("Lỗi tải dữ liệu:", error);
+        message.error("Không thể tải danh sách nhóm hoặc tài khoản.");
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const toggleAccount = (id) => {
     if (selectedAccountIds.includes(id)) {
       setSelectedAccountIds(selectedAccountIds.filter(accId => accId !== id));
@@ -65,202 +86,212 @@ const CreatePost = () => {
     }
   };
 
-  const previewAccount = myAccounts.find(acc => acc.id === selectedAccountIds[selectedAccountIds.length - 1]) || myAccounts[0];
+  // Preview logic
+  const previewAccount = socialAccounts.find(acc => acc.id === selectedAccountIds[selectedAccountIds.length - 1]) || socialAccounts[0] || {};
+  const isYoutubeSelected = previewAccount.platform === 'youtube';
   const handleUpload = ({ fileList: newFileList }) => setFileList(newFileList);
   const previewImage = fileList.length > 0 ? fileList[0].thumbUrl || URL.createObjectURL(fileList[0].originFileObj) : null;
 
-  // Kiểm tra platform đang chọn
-  const isYoutubeSelected = previewAccount.platform === 'youtube';
-  const isFacebookSelected = previewAccount.platform === 'facebook';
-
-  // Reset visibility về mặc định khi đổi nền tảng để tránh lỗi logic
-  useEffect(() => {
-     setVisibility('public'); 
-  }, [previewAccount.platform]);
-
-  // Render Icon chế độ hiển thị (SỬA LẠI LOGIC)
-  const getVisibilityIcon = () => {
-    switch (visibility) {
-      case 'public': return <GlobalOutlined style={{ fontSize: 12 }} />;
-      case 'friends': return <TeamOutlined style={{ fontSize: 12 }} />;
-      case 'private': return <LockOutlined style={{ fontSize: 12 }} />;
-      case 'unlisted': return <EyeInvisibleOutlined style={{ fontSize: 12 }} />; // Icon cho YouTube Unlisted
-      default: return <GlobalOutlined style={{ fontSize: 12 }} />;
-    }
-  };
-
+  // Xử lý AI (Giả lập frontend)
   const handleAiGenerate = () => {
-    if (!aiTopic) { message.warning('Vui lòng nhập chủ đề!'); return; }
+    if (!aiTopic) return message.warning('Nhập chủ đề đã!');
     setAiLoading(true);
     setTimeout(() => {
-        const fakeContent = `🔥 [HOT TREND] ${aiTopic.toUpperCase()} ĐANG ĐỔ BỘ! 🔥\n\n✨ Cơ hội không thể bỏ lỡ...\n#${aiTopic.replace(/\s/g, '')} #Trending`;
-        if (isYoutubeSelected && postType === 'video') { setTitle(`Review: ${aiTopic} - Có đáng tiền không?`); }
+        const fakeContent = `🔥 [AI CONTENT] ${aiTopic.toUpperCase()} \n\n✨ Nội dung này được tạo tự động cho kênh ${previewAccount.name || 'của bạn'}...\n#${aiTopic.replace(/\s/g, '')} #Trending`;
+        if (isYoutubeSelected && postType === 'video') setTitle(`Review: ${aiTopic}`);
         setContent(fakeContent);
         setAiLoading(false);
         setIsAiModalOpen(false);
         message.success('AI đã viết xong!');
-        setAiTopic('');
-    }, 1500);
+    }, 1000);
   };
+
+  // 2. Xử lý ĐĂNG BÀI (Gọi API thật)
+  const handleSubmit = async () => {
+    if (!selectedWorkspaceId) return message.error("Vui lòng chọn Workspace (Nhóm)!");
+    if (selectedAccountIds.length === 0) return message.error("Chọn ít nhất 1 tài khoản để đăng!");
+    if (!content) return message.error("Nội dung không được để trống!");
+
+    setSubmitting(true);
+    try {
+        // Bước 1: Tạo bài viết trong Workspace
+        const postPayload = {
+            workspace_id: selectedWorkspaceId,
+            content: content,
+            // Nếu có title (cho YouTube) thì gửi, không thì thôi
+            ...(title && { title: title }),
+            status: isSchedule ? 'scheduled' : 'draft',
+            scheduled_at: isSchedule && scheduleDate ? scheduleDate.toISOString() : null,
+            // 👇 Gửi thêm thông tin meta_data (bao gồm visibility)
+            meta_data: {
+                privacy_status: visibility,
+                youtube_post_type: postType
+            }
+        };
+
+        // Gọi API tạo bài (Backend: POST /workspaces/{id}/posts)
+        const createRes = await createWorkspacePost(selectedWorkspaceId, postPayload);
+        const newPostId = createRes.data.id;
+
+        // Bước 2: Nếu chọn "Đăng ngay" -> Gọi API publish-now
+        if (!isSchedule) {
+            await publishWorkspacePostNow(selectedWorkspaceId, newPostId);
+            message.success("Đã đăng bài thành công lên các nền tảng!");
+        } else {
+            message.success(`Đã lên lịch đăng vào ${dayjs(scheduleDate).format('HH:mm DD/MM')}`);
+        }
+
+        // Reset form
+        setContent('');
+        setTitle('');
+        setFileList([]);
+
+    } catch (error) {
+        console.error("Lỗi đăng bài:", error);
+        message.error("Có lỗi xảy ra khi đăng bài.");
+    } finally {
+        setSubmitting(false);
+    }
+  };
+
+  if (loadingData) return <div style={{textAlign: 'center', padding: 50}}><Spin size="large" tip="Đang tải dữ liệu..." /></div>;
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
       <Row gutter={24}>
-        
-        {/* --- CỘT TRÁI: FORM NHẬP LIỆU --- */}
         <Col xs={24} lg={14}>
           <div style={{ marginBottom: 24 }}>
-             <Title level={2} style={{ margin: 0 }}>Tạo bài đăng mới</Title>
-             <Text type="secondary">Soạn thảo, tối ưu và đăng bài lên nhiều nền tảng</Text>
+             <Title level={2} style={{ margin: 0 }}>Tạo bài đăng</Title>
+             <Text type="secondary">Đăng bài lên nhiều nền tảng cùng lúc</Text>
           </div>
 
-          <Card bordered={false} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: 12 }}>
+          <Card bordered={false} style={{ borderRadius: 12 }}>
             
-            {/* 1. CHỌN TÀI KHOẢN */}
+            {/* CHỌN WORKSPACE (QUAN TRỌNG) */}
             <div style={{ marginBottom: 24 }}>
-              <Text strong style={{ display: 'block', marginBottom: 12 }}>Đăng lên:</Text>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                 {myAccounts.map(acc => {
-                    const isSelected = selectedAccountIds.includes(acc.id);
-                    return (
-                        <div key={acc.id} onClick={() => toggleAccount(acc.id)}
-                            style={{ 
-                                cursor: 'pointer',
-                                border: isSelected ? `2px solid ${acc.platform === 'youtube' ? '#ff0000' : '#1877f2'}` : '2px solid #f0f0f0',
-                                borderRadius: 8, padding: '8px 12px',
-                                background: isSelected ? (acc.platform === 'youtube' ? '#fff1f0' : '#e6f7ff') : '#fff',
-                                display: 'flex', alignItems: 'center', gap: 10, opacity: isSelected ? 1 : 0.6
-                            }}
-                        >
-                            <div style={{ position: 'relative' }}>
-                                <Avatar src={acc.avatar} size={32} />
-                                {isSelected && <CheckCircleFilled style={{ position: 'absolute', top: -5, right: -5, color: '#52c41a', background: '#fff', borderRadius: '50%' }} />}
-                            </div>
-                            <div style={{ lineHeight: 1.2 }}>
-                                <div style={{ fontWeight: 600, fontSize: 13 }}>{acc.name}</div>
-                                <div style={{ fontSize: 10, color: '#888', textTransform: 'capitalize' }}>
-                                    {acc.platform === 'youtube' ? <YoutubeFilled style={{color:'red'}}/> : <FacebookFilled style={{color:'#1877f2'}}/>} {acc.platform}
+                <Text strong>Chọn Nhóm làm việc (Workspace):</Text>
+                <Select 
+                    style={{ width: '100%', marginTop: 8 }} 
+                    placeholder="Chọn workspace..."
+                    value={selectedWorkspaceId}
+                    onChange={setSelectedWorkspaceId}
+                >
+                    {workspaces.map(ws => (
+                        <Option key={ws.id} value={ws.id}>{ws.name}</Option>
+                    ))}
+                </Select>
+            </div>
+
+            {/* CHỌN TÀI KHOẢN */}
+            <div style={{ marginBottom: 24 }}>
+              <Text strong style={{ display: 'block', marginBottom: 12 }}>Đăng lên tài khoản nào?</Text>
+              {socialAccounts.length === 0 ? <Text type="danger">Bạn chưa kết nối tài khoản nào. Vào Dashboard kết nối ngay!</Text> : (
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                     {socialAccounts.map(acc => {
+                        const isSelected = selectedAccountIds.includes(acc.id);
+                        return (
+                            <div key={acc.id} onClick={() => toggleAccount(acc.id)}
+                                style={{ 
+                                    cursor: 'pointer',
+                                    border: isSelected ? `2px solid ${acc.platform === 'youtube' ? '#ff0000' : '#1877f2'}` : '2px solid #f0f0f0',
+                                    borderRadius: 8, padding: '8px 12px',
+                                    background: isSelected ? '#f6ffed' : '#fff',
+                                    display: 'flex', alignItems: 'center', gap: 10, opacity: isSelected ? 1 : 0.7
+                                }}
+                            >
+                                <Avatar size={32} style={{ backgroundColor: acc.platform === 'youtube' ? 'red' : 'blue' }}>{acc.platform[0].toUpperCase()}</Avatar>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: 13 }}>{acc.name || acc.username}</div>
                                 </div>
+                                {isSelected && <CheckCircleFilled style={{ color: '#52c41a' }} />}
                             </div>
-                        </div>
-                    );
-                 })}
-              </div>
+                        );
+                     })}
+                  </div>
+              )}
             </div>
 
             <Divider />
 
-            {/* --- LỰA CHỌN LOẠI BÀI (CHỈ HIỆN KHI CHỌN YOUTUBE) --- */}
+            {/* 👇 SỬA LỖI 1: Thêm phần chọn loại bài (dùng setPostType) */}
             {isYoutubeSelected && (
                 <div style={{ marginBottom: 24, background: '#f9f9f9', padding: 15, borderRadius: 8 }}>
-                    <Text strong style={{ display: 'block', marginBottom: 8 }}>Bạn muốn đăng gì lên YouTube?</Text>
-                    <Radio.Group value={postType} onChange={(e) => setPostType(e.target.value)} buttonStyle="solid">
+                    <Text strong style={{ display: 'block', marginBottom: 8 }}>Loại bài đăng YouTube:</Text>
+                    <Radio.Group 
+                        value={postType} 
+                        onChange={(e) => setPostType(e.target.value)} 
+                        buttonStyle="solid"
+                    >
                         <Radio.Button value="video"><VideoCameraOutlined /> Video dài</Radio.Button>
+                        <Radio.Button value="short"><VideoCameraOutlined /> Shorts</Radio.Button>
                         <Radio.Button value="post"><FileTextOutlined /> Bài đăng cộng đồng</Radio.Button>
                     </Radio.Group>
                 </div>
             )}
 
-            {/* --- 2. TIÊU ĐỀ (CHỈ HIỆN CHO YOUTUBE VIDEO) --- */}
-            {(isYoutubeSelected && postType === 'video') && (
+            {/* INPUT TIÊU ĐỀ (Cho YouTube) */}
+            {(isYoutubeSelected && (postType === 'video' || postType === 'short')) && (
                 <div style={{ marginBottom: 24 }}>
-                    <Text strong style={{ display: 'block', marginBottom: 8 }}>Tiêu đề video <span style={{color:'red'}}>*</span>:</Text>
-                    <Input 
-                        size="large" placeholder="Nhập tiêu đề video..." 
-                        value={title} onChange={(e) => setTitle(e.target.value)} 
-                        maxLength={100} showCount style={{ borderRadius: 8 }}
-                    />
+                    <Text strong>Tiêu đề video (YouTube):</Text>
+                    <Input size="large" placeholder="Nhập tiêu đề..." value={title} onChange={(e) => setTitle(e.target.value)} style={{ marginTop: 8 }} />
                 </div>
             )}
 
-            {/* 3. NỘI DUNG */}
+            {/* INPUT NỘI DUNG */}
             <div style={{ marginBottom: 24 }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text strong>{(isYoutubeSelected && postType === 'video') ? 'Mô tả video:' : 'Nội dung bài viết:'}</Text>
-                    <Button type="dashed" size="small" icon={<ThunderboltFilled style={{ color: '#faad14' }} />} onClick={() => setIsAiModalOpen(true)} style={{ color: '#1677ff', borderColor: '#1677ff' }}>Viết bằng AI Magic</Button>
+                    <Text strong>Nội dung bài viết:</Text>
+                    <Button type="dashed" size="small" icon={<ThunderboltFilled />} onClick={() => setIsAiModalOpen(true)}>AI Viết Hộ</Button>
                </div>
-               <TextArea 
-                  rows={5} placeholder="Nhập nội dung chi tiết, hashtag..." 
-                  style={{ fontSize: 15, borderRadius: 8 }}
-                  value={content} onChange={(e) => setContent(e.target.value)}
-                  maxLength={2200} showCount
-               />
+               <TextArea rows={5} placeholder="Nhập nội dung..." value={content} onChange={(e) => setContent(e.target.value)} />
             </div>
 
-            {/* 4. UPLOAD */}
+            {/* UPLOAD FILE */}
             <div style={{ marginBottom: 24 }}>
-               <Text strong>{(isYoutubeSelected && postType === 'video') ? 'Upload Video & Thumbnail:' : 'Thêm ảnh/GIF:'}</Text>
-               <Upload.Dragger listType="picture-card" fileList={fileList} onChange={handleUpload} beforeUpload={() => false} maxCount={1} style={{ marginTop: 8, background: '#fafafa', borderRadius: 8 }}>
-                  <p className="ant-upload-drag-icon"><CloudUploadOutlined style={{ color: '#1677ff' }} /></p>
-                  <p className="ant-upload-text">Kéo thả file vào đây</p>
+               <Upload.Dragger listType="picture-card" fileList={fileList} onChange={handleUpload} beforeUpload={() => false} maxCount={1}>
+                  <p className="ant-upload-drag-icon"><CloudUploadOutlined /></p>
+                  <p className="ant-upload-text">Kéo thả ảnh/video vào đây</p>
                </Upload.Dragger>
             </div>
 
-            {/* --- 5. CÀI ĐẶT NÂNG CAO --- */}
-            <div style={{ background: '#f8f9fa', padding: 20, borderRadius: 12, border: '1px solid #eee' }}>
-                <Text strong style={{ fontSize: 15, display: 'block', marginBottom: 15 }}><GlobalOutlined /> Cài đặt bài đăng</Text>
-                
+            {/* CÀI ĐẶT NÂNG CAO */}
+            <div style={{ background: '#f8f9fa', padding: 20, borderRadius: 12 }}>
                 <Row gutter={[24, 24]}>
-                    
-                    {/* 👇👇👇 PHẦN SỬA LỖI LOGIC Ở ĐÂY 👇👇👇 */}
                     <Col span={12}>
-                        <div style={{ marginBottom: 5 }}>Chế độ hiển thị</div>
-                        <Select value={visibility} onChange={setVisibility} style={{ width: '100%' }}>
+                        {/* 👇 SỬA LỖI 2: Dùng visibility và setVisibility */}
+                        <Text strong style={{ display: 'block', marginBottom: 5 }}>Chế độ hiển thị:</Text>
+                        <Select 
+                            value={visibility} 
+                            onChange={setVisibility} 
+                            style={{ width: '100%' }}
+                        >
                             <Option value="public"><GlobalOutlined /> Công khai</Option>
-                            
-                            {/* Nếu là Facebook thì hiện "Bạn bè" */}
-                            {isFacebookSelected && (
-                                <Option value="friends"><TeamOutlined /> Bạn bè</Option>
-                            )}
-
-                            {/* Nếu là YouTube thì hiện "Không công khai" */}
-                            {isYoutubeSelected && (
-                                <Option value="unlisted"><EyeInvisibleOutlined /> Không công khai</Option>
-                            )}
-                            
+                            <Option value="unlisted"><EyeInvisibleOutlined /> Không công khai</Option>
                             <Option value="private"><LockOutlined /> Riêng tư</Option>
                         </Select>
                     </Col>
-                    {/* 👆👆👆 ----------------------- 👆👆👆 */}
-
+                    
                     <Col span={12}>
-                        <div style={{ marginBottom: 5 }}>Vị trí / Check-in</div>
-                        <Input 
-                            prefix={<EnvironmentOutlined style={{ color: '#eb2f96' }} />} 
-                            placeholder="VD: Hà Nội" 
-                            value={location} onChange={(e) => setLocation(e.target.value)}
-                        />
-                    </Col>
-
-                    <Col span={12}>
-                        <Space style={{ marginBottom: 5 }}>
-                            <span>Lên lịch đăng?</span>
+                        <Text strong style={{ display: 'block', marginBottom: 5 }}>Lên lịch đăng:</Text>
+                        <Space>
                             <Switch size="small" checked={isSchedule} onChange={setIsSchedule} />
+                            <DatePicker 
+                                showTime placeholder="Chọn ngày giờ" 
+                                disabled={!isSchedule} onChange={setScheduleDate} 
+                                style={{ width: 200 }}
+                            />
                         </Space>
-                        <DatePicker 
-                            showTime placeholder="Chọn ngày giờ" style={{ width: '100%' }} 
-                            disabled={!isSchedule} format="DD/MM/YYYY HH:mm"
-                            onChange={setScheduleDate}
-                        />
-                    </Col>
-
-                    <Col span={12}>
-                        <div style={{ marginBottom: 5 }}>Thẻ (Tags)</div>
-                        <Select mode="tags" placeholder="Nhập tag..." style={{ width: '100%' }} suffixIcon={<TagOutlined />} onChange={setTags} />
                     </Col>
                 </Row>
             </div>
 
-            {/* 6. BUTTONS */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 32, gap: 15 }}>
-               <Button size="large">Lưu nháp</Button>
+            {/* BUTTON SUBMIT */}
+            <div style={{ marginTop: 32, textAlign: 'right' }}>
                <Button 
                     type="primary" size="large" icon={<SendOutlined />} 
+                    loading={submitting}
                     disabled={selectedAccountIds.length === 0}
-                    onClick={() => {
-                        message.success(`Đã đăng bài thành công!`);
-                        setContent(''); setTitle(''); setFileList([]);
-                    }}
+                    onClick={handleSubmit}
                     style={{ borderRadius: 8, padding: '0 40px', fontWeight: 600 }}
                >
                   {isSchedule ? 'LÊN LỊCH' : 'ĐĂNG NGAY'}
@@ -269,115 +300,36 @@ const CreatePost = () => {
           </Card>
         </Col>
 
-        {/* --- CỘT PHẢI: PREVIEW (GIỮ NGUYÊN CODE TỐT CỦA ANH) --- */}
+        {/* PREVIEW BÊN PHẢI */}
         <Col xs={24} lg={10}>
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-             <Title level={5} style={{ color: '#888', margin: 0 }}>Xem trước hiển thị</Title>
-             <Text type="secondary" style={{ fontSize: 12 }}>
-                Giao diện: <b style={{ color: isYoutubeSelected ? 'red' : '#1877f2' }}>{previewAccount.name}</b>
-             </Text>
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-             <div style={{ width: 360, minHeight: 650, background: '#fff', border: '10px solid #222', borderRadius: 40, overflow: 'hidden', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-                <div style={{ height: 30, background: '#fff', display: 'flex', justifyContent: 'space-between', padding: '0 20px', alignItems: 'center', fontSize: 10, fontWeight: 'bold' }}>
-                    <span>9:41</span><span>📶 🔋</span>
-                </div>
-
-                {/* FACEBOOK PREVIEW */}
-                {isFacebookSelected && (
-                    <div style={{ background: '#f0f2f5', height: '100%' }}>
-                        <div style={{ background: '#fff', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #ddd' }}>
-                             <span style={{ color: '#1877f2', fontWeight: 'bold', fontSize: 18 }}>facebook</span>
-                             <span style={{fontSize: 18}}>🔍</span>
-                        </div>
-                        <div style={{ background: '#fff', marginTop: 10, paddingBottom: 10 }}>
-                            <div style={{ padding: 12, display: 'flex', gap: 10 }}>
-                                <Avatar src={previewAccount.avatar} />
-                                <div>
-                                    <div style={{ fontWeight: 'bold', fontSize: 14 }}>
-                                        {previewAccount.name} 
-                                        {location && <span style={{fontWeight: 'normal', color: '#666'}}> đang ở <b>{location}</b></span>}
-                                    </div>
-                                    <div style={{ fontSize: 11, color: '#65676b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        {isSchedule && scheduleDate ? dayjs(scheduleDate).format('DD/MM HH:mm') : 'Vừa xong'} · {getVisibilityIcon()}
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{ padding: '0 12px 12px', fontSize: 14, whiteSpace: 'pre-line' }}>
-                                {content || 'Nội dung bài viết...'}
-                                {tags.length > 0 && <div style={{color: '#1877f2', marginTop: 5}}>{tags.map(t => `#${t} `)}</div>}
-                            </div>
-                            {previewImage && <img src={previewImage} alt="Post" style={{ width: '100%', objectFit: 'cover' }} />}
-                            <div style={{ padding: '10px 12px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-around', color: '#65676b' }}>
-                                <span><LikeOutlined /> Thích</span><span><CommentOutlined /> Bình luận</span><span><ShareAltOutlined /> Chia sẻ</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* YOUTUBE PREVIEW */}
-                {isYoutubeSelected && (
-                    <div style={{ background: '#fff', height: '100%' }}>
-                        {postType === 'video' ? (
-                            <>
-                                <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {previewImage ? <img src={previewImage} alt="Thumb" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <YoutubeFilled style={{ fontSize: 40, color: '#333' }} />}
-                                </div>
-                                <div style={{ padding: 12 }}>
-                                    <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{title || 'Tiêu đề video...'}</div>
-                                    <div style={{ fontSize: 12, color: '#606060', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-                                        1.2K lượt xem · 2 giờ trước · {getVisibilityIcon()}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, paddingBottom: 12, borderBottom: '1px solid #e5e5e5' }}>
-                                        <Avatar src={previewAccount.avatar} size={32} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600, fontSize: 13 }}>{previewAccount.name}</div>
-                                            <div style={{ fontSize: 11, color: '#606060' }}>125K người đăng ký</div>
-                                        </div>
-                                        <Button size="small" type="primary" danger style={{ borderRadius: 20 }}>Đăng ký</Button>
-                                    </div>
-                                    <div style={{ marginTop: 12 }}>
-                                        <Text strong>Mô tả:</Text>
-                                        <div style={{ fontSize: 13, color: '#0f0f0f', marginTop: 4, whiteSpace: 'pre-line' }}>{content || 'Mô tả...'}</div>
-                                        <div style={{color: '#065fd4', marginTop: 5, fontSize: 13}}>{tags.map(t => `#${t} `)}</div>
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            // Community Post
-                            <div style={{ padding: 16 }}>
-                                <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                                    <Avatar src={previewAccount.avatar} size={40} />
-                                    <div>
-                                        <div style={{ fontWeight: 600, fontSize: 14 }}>{previewAccount.name}</div>
-                                        <div style={{ fontSize: 12, color: '#606060' }}>2 giờ trước</div>
-                                    </div>
-                                </div>
-                                <div style={{ fontSize: 15, marginBottom: 12, whiteSpace: 'pre-line' }}>{content || 'Nội dung bài đăng...'}</div>
-                                {previewImage && <img src={previewImage} alt="Post" style={{ width: '100%', borderRadius: 12 }} />}
-                                <div style={{ display: 'flex', gap: 20, marginTop: 12, color: '#606060' }}>
-                                    <LikeOutlined style={{ fontSize: 20 }} /> <DislikeOutlined style={{ fontSize: 20 }} /> <CommentOutlined style={{ fontSize: 20, marginLeft: 'auto' }} />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
+             <div style={{ textAlign: 'center', marginTop: 50 }}>
+                 <div style={{ border: '10px solid #333', borderRadius: 40, height: 600, background: '#fff', overflow: 'hidden', position: 'relative' }}>
+                     <div style={{ padding: 20, background: isYoutubeSelected ? '#ff0000' : '#1877f2', color: '#fff' }}>
+                         {isYoutubeSelected ? 'YouTube Preview' : 'Facebook Preview'}
+                     </div>
+                     <div style={{ padding: 20, textAlign: 'left' }}>
+                         <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
+                             <Avatar style={{ backgroundColor: '#ccc' }} />
+                             <div>
+                                 <div style={{ fontWeight: 'bold' }}>{previewAccount.name || 'Tên tài khoản'}</div>
+                                 <div style={{ fontSize: 12, color: '#999' }}>Vừa xong • {visibility === 'public' ? 'Công khai' : 'Riêng tư'}</div>
+                             </div>
+                         </div>
+                         <div style={{ whiteSpace: 'pre-wrap', marginBottom: 15 }}>{content || 'Nội dung bài viết sẽ hiện ở đây...'}</div>
+                         {previewImage && <img src={previewImage} style={{ width: '100%', borderRadius: 8 }} />}
+                     </div>
+                 </div>
              </div>
-          </div>
         </Col>
       </Row>
 
       {/* MODAL AI */}
-      <Modal title={<div><RobotOutlined style={{color: '#1677ff'}}/> Trợ lý AI</div>} open={isAiModalOpen} onCancel={() => setIsAiModalOpen(false)} footer={null} centered>
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <p>Nhập chủ đề:</p>
-            <Input placeholder="VD: Review iPhone 16..." value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} onPressEnter={handleAiGenerate} />
-            <Button type="primary" style={{ marginTop: 20 }} onClick={handleAiGenerate} loading={aiLoading}>Viết ngay</Button>
-        </div>
+      <Modal title="AI Writer" open={isAiModalOpen} onCancel={() => setIsAiModalOpen(false)} footer={null}>
+        <Input placeholder="Chủ đề..." value={aiTopic} onChange={e => setAiTopic(e.target.value)} onPressEnter={handleAiGenerate} />
+        <Button type="primary" block style={{ marginTop: 15 }} onClick={handleAiGenerate} loading={aiLoading}>Viết ngay</Button>
       </Modal>
     </div>
   );
 };
 
-export default CreatePost;
+export default CreatePost;  

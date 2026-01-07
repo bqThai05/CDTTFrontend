@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Typography, Button, Card, Row, Col, Avatar, 
-  Dropdown, Modal, Form, Input, message, Spin, Empty, Tag 
+  Dropdown, Modal, Form, Input, message, Spin, Empty, Tag, Tooltip 
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -11,11 +11,12 @@ import {
   TeamOutlined, 
   RocketFilled,
   SettingOutlined,
-  ExclamationCircleFilled
+  ExclamationCircleFilled,
+  LoginOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
-// Import đủ các hàm từ api.js (Đảm bảo bạn đã thêm update và delete bên api.js rồi nhé)
+// Import API
 import { getWorkspaces, createWorkspace, updateWorkspace, deleteWorkspace } from '../services/api'; 
 
 const { Title, Text, Paragraph } = Typography;
@@ -30,20 +31,22 @@ const Workspaces = () => {
   
   // State quản lý Modal Chỉnh sửa (Edit)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingWorkspace, setEditingWorkspace] = useState(null); // Lưu nhóm đang được sửa
+  const [editingWorkspace, setEditingWorkspace] = useState(null);
 
   const [form] = Form.useForm();      // Form tạo mới
   const [editForm] = Form.useForm();  // Form chỉnh sửa
   const navigate = useNavigate();
 
-  // 1. Tải danh sách nhóm
+  // 1. Tải danh sách nhóm từ API
   const fetchWorkspaces = async () => {
     setLoading(true);
     try {
       const res = await getWorkspaces();
+      // Backend trả về mảng danh sách workspace
       setWorkspaces(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Lỗi:", error);
+      message.error("Không thể tải danh sách nhóm.");
     } finally {
       setLoading(false);
     }
@@ -56,41 +59,36 @@ const Workspaces = () => {
   // 2. Xử lý Tạo nhóm mới
   const handleCreate = async (values) => {
     try {
-      await createWorkspace({ name: values.name, description: values.description });
+      await createWorkspace({ name: values.name }); // Backend chỉ cần field 'name'
       message.success('Tạo nhóm thành công!');
       setIsCreateModalOpen(false);
       form.resetFields();
-      fetchWorkspaces();
-    } catch {
+      fetchWorkspaces(); // Load lại danh sách
+    } catch  {
       message.error('Lỗi khi tạo nhóm.');
     }
   };
 
-  // 3. Xử lý mở Modal Sửa (Khi bấm vào nút Sửa)
+  // 3. Xử lý mở Modal Sửa
   const openEditModal = (workspace) => {
-    setEditingWorkspace(workspace); // Lưu lại nhóm đang chọn
-    // Điền dữ liệu cũ vào form
-    editForm.setFieldsValue({
-        name: workspace.name,
-        description: workspace.description
-    });
-    setIsEditModalOpen(true); // Mở modal lên
+    setEditingWorkspace(workspace);
+    editForm.setFieldsValue({ name: workspace.name });
+    setIsEditModalOpen(true);
   };
 
-  // 4. Xử lý Lưu thay đổi (Khi bấm OK ở Modal Sửa)
+  // 4. Xử lý Lưu thay đổi (Sửa tên)
   const handleUpdate = async (values) => {
     try {
-      // Gọi API updateWorkspace mà bạn vừa thêm
       await updateWorkspace(editingWorkspace.id, values);
       message.success('Cập nhật thành công!');
       setIsEditModalOpen(false);
-      fetchWorkspaces(); // Load lại danh sách mới
+      fetchWorkspaces();
     } catch {
-      message.error('Lỗi khi cập nhật (Có thể bạn không phải Admin).');
+      message.error('Lỗi khi cập nhật (Có thể bạn không phải Owner).');
     }
   };
 
-  // 5. Xử lý Xóa nhóm (Khi bấm vào nút Xóa)
+  // 5. Xử lý Xóa nhóm
   const showDeleteConfirm = (workspaceId) => {
     confirm({
       title: 'Xóa nhóm làm việc này?',
@@ -101,41 +99,52 @@ const Workspaces = () => {
       cancelText: 'Hủy',
       onOk: async () => {
         try {
-            // Gọi API deleteWorkspace mà bạn vừa thêm
             await deleteWorkspace(workspaceId);
             message.success('Đã xóa nhóm!');
-            setWorkspaces(prev => prev.filter(ws => ws.id !== workspaceId));
+            fetchWorkspaces();
         } catch {
-            message.error('Không thể xóa (Có thể bạn không phải Admin).');
+            message.error('Không thể xóa (Chỉ Owner mới được xóa).');
         }
       },
     });
   };
 
-  // MENU CÀI ĐẶT (Dropdown)
+  // MENU CÀI ĐẶT (Nút 3 chấm trên thẻ)
   const getMenuProps = (workspace) => ({
     items: [
         {
             key: 'edit',
-            label: 'Chỉnh sửa thông tin',
+            label: 'Đổi tên nhóm',
             icon: <EditOutlined />,
             onClick: ({ domEvent }) => {
-                domEvent.stopPropagation(); // Quan trọng: Chặn click lan ra ngoài Card
+                domEvent.stopPropagation();
                 openEditModal(workspace);
             }
         },
+        { type: 'divider' },
         {
             key: 'delete',
-            label: 'Xóa nhóm này',
+            label: 'Giải tán nhóm',
             icon: <DeleteOutlined />,
             danger: true,
             onClick: ({ domEvent }) => {
-                domEvent.stopPropagation(); // Quan trọng: Chặn click lan ra ngoài Card
+                domEvent.stopPropagation();
                 showDeleteConfirm(workspace.id);
             }
         }
     ]
   });
+
+  // Random màu gradient cho đẹp
+  const getGradient = (index) => {
+      const gradients = [
+        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)',
+        'linear-gradient(120deg, #f093fb 0%, #f5576c 100%)',
+        'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)'
+      ];
+      return gradients[index % gradients.length];
+  };
 
   return (
     <div style={{ padding: '24px', maxWidth: 1400, margin: '0 auto' }}>
@@ -144,12 +153,9 @@ const Workspaces = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
         <div>
           <Title level={2} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
-
-            Không gian làm việc
+            <RocketFilled style={{color: '#faad14'}} /> Không gian làm việc
           </Title>
-          <Text type="secondary" style={{ fontSize: 16, marginLeft: 0 }}>
-              Quản lý các dự án và đội nhóm của bạn
-          </Text>
+          <Text type="secondary">Quản lý các dự án và đội nhóm của bạn</Text>
         </div>
         
         <Button 
@@ -158,9 +164,8 @@ const Workspaces = () => {
           icon={<PlusOutlined />} 
           onClick={() => setIsCreateModalOpen(true)}
           style={{ 
-            height: 50, padding: '0 30px', borderRadius: 25, fontSize: 16, fontWeight: 600,
-            background: 'linear-gradient(135deg, #d4145a 0%, #fbb03b 100%)',
-            border: 'none', boxShadow: '0 8px 20px rgba(212, 20, 90, 0.3)'
+            height: 45, borderRadius: 8, fontWeight: 600,
+            background: '#1677ff', boxShadow: '0 4px 10px rgba(22, 119, 255, 0.3)'
           }}
         >
           Tạo nhóm mới
@@ -169,7 +174,7 @@ const Workspaces = () => {
 
       {/* DANH SÁCH NHÓM */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 100 }}><Spin size="large" /></div>
+        <div style={{ textAlign: 'center', padding: 100 }}><Spin size="large" tip="Đang tải danh sách..." /></div>
       ) : workspaces.length === 0 ? (
         <Empty 
             image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
@@ -180,47 +185,38 @@ const Workspaces = () => {
         </Empty>
       ) : (
         <Row gutter={[24, 24]}>
-          {workspaces.map((ws, index) => {
-            const gradients = [
-                'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)',
-                'linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%)',
-                'linear-gradient(120deg, #fccb90 0%, #d57eeb 100%)',
-                'linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)'
-            ];
-            const bgGradient = gradients[index % gradients.length];
-
-            return (
+          {workspaces.map((ws, index) => (
               <Col xs={24} sm={12} lg={8} xl={6} key={ws.id}>
                 <Card
                   hoverable
                   onClick={() => navigate(`/workspaces/${ws.id}`)}
                   style={{ 
-                      borderRadius: 20, overflow: 'hidden', border: 'none', 
+                      borderRadius: 16, overflow: 'hidden', border: 'none', 
                       boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s ease',
+                      height: '100%'
                   }}
-                  bodyStyle={{ padding: 0 }}
+                  bodyStyle={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%' }}
                 >
                     {/* Phần Cover Màu */}
-                    <div style={{ height: 100, background: bgGradient, position: 'relative' }}>
-                        
-                        {/* NÚT CÀI ĐẶT (Đã gắn Dropdown) */}
-                        <div style={{ position: 'absolute', top: 15, right: 15, zIndex: 10 }}>
+                    <div style={{ height: 80, background: getGradient(index), position: 'relative' }}>
+                        {/* Nút Cài đặt góc phải */}
+                        <div style={{ position: 'absolute', top: 10, right: 10 }}>
                              <Dropdown menu={getMenuProps(ws)} trigger={['click']} placement="bottomRight">
                                 <Button 
-                                    shape="circle" 
+                                    shape="circle" size="small"
                                     icon={<SettingOutlined />} 
                                     style={{ border: 'none', background: 'rgba(255,255,255,0.3)', color: '#fff' }}
-                                    onClick={(e) => e.stopPropagation()} // Chặn click vào Card
+                                    onClick={(e) => e.stopPropagation()} 
                                 />
                              </Dropdown>
                         </div>
-
                     </div>
 
-                    <div style={{ padding: '0 24px 24px 24px', marginTop: -40, position: 'relative' }}>
+                    <div style={{ padding: '0 20px 20px 20px', marginTop: -35, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        {/* Avatar Tên Nhóm */}
                         <Avatar 
-                            size={72} 
+                            size={70} 
                             style={{ 
                                 backgroundColor: '#fff', color: '#333', 
                                 fontSize: 28, fontWeight: 'bold',
@@ -230,30 +226,32 @@ const Workspaces = () => {
                             {ws.name.charAt(0).toUpperCase()}
                         </Avatar>
 
-                        <div style={{ marginTop: 15 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                <Title level={4} style={{ margin: 0, width: '75%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ marginTop: 10 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Title level={4} style={{ margin: 0, width: '70%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {ws.name}
                                 </Title>
-                                <Tag color="blue" style={{ borderRadius: 10 }}>Admin</Tag>
+                                <Tag color="blue">Owner</Tag>
                             </div>
                             
-                            <Paragraph type="secondary" ellipsis={{ rows: 2 }} style={{ marginTop: 8, height: 44, fontSize: 13.5, color: '#666' }}>
-                                {ws.description || "Chưa có mô tả cho nhóm này."}
-                            </Paragraph>
+                            <Text type="secondary" style={{ fontSize: 13, marginTop: 5, display: 'block' }}>
+                                ID Nhóm: #{ws.id}
+                            </Text>
+                        </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, borderTop: '1px solid #f5f5f5', paddingTop: 15 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#888', fontSize: 13 }}>
-                                    <TeamOutlined style={{ fontSize: 16 }} /> <b>3</b> thành viên
-                                </div>
-                                <Button type="link" size="small" style={{ fontWeight: 'bold', padding: 0 }}>Truy cập &rarr;</Button>
+                        {/* Footer Card */}
+                        <div style={{ marginTop: 'auto', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#888' }}>
+                                <TeamOutlined /> <span>Thành viên</span>
                             </div>
+                            <Tooltip title="Vào không gian làm việc">
+                                <Button type="primary" shape="circle" icon={<LoginOutlined />} ghost />
+                            </Tooltip>
                         </div>
                     </div>
                 </Card>
               </Col>
-            );
-          })}
+          ))}
         </Row>
       )}
 
@@ -268,18 +266,15 @@ const Workspaces = () => {
         centered
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="name" label="Tên nhóm" rules={[{ required: true, message: 'Nhập tên nhóm đi bạn ơi!' }]}>
-            <Input size="large" placeholder="VD: Marketing Team..." />
-          </Form.Item>
-          <Form.Item name="description" label="Mô tả ngắn">
-            <Input.TextArea rows={3} placeholder="Nhóm này dùng để làm gì..." />
+          <Form.Item name="name" label="Tên nhóm" rules={[{ required: true, message: 'Vui lòng nhập tên nhóm!' }]}>
+            <Input size="large" placeholder="VD: Marketing Team A..." autoFocus />
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* --- MODAL CHỈNH SỬA (ĐÃ THÊM) --- */}
+      {/* --- MODAL CHỈNH SỬA --- */}
       <Modal
-        title="✏️ Chỉnh Sửa Thông Tin Nhóm"
+        title="✏️ Đổi Tên Nhóm"
         open={isEditModalOpen}
         onOk={() => editForm.submit()}
         onCancel={() => setIsEditModalOpen(false)}
@@ -288,11 +283,8 @@ const Workspaces = () => {
         centered
       >
         <Form form={editForm} layout="vertical" onFinish={handleUpdate}>
-          <Form.Item name="name" label="Tên nhóm" rules={[{ required: true, message: 'Tên không được để trống' }]}>
+          <Form.Item name="name" label="Tên mới" rules={[{ required: true, message: 'Tên không được để trống' }]}>
             <Input size="large" />
-          </Form.Item>
-          <Form.Item name="description" label="Mô tả">
-            <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
       </Modal>
