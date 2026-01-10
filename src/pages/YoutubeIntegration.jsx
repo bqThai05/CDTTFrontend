@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom';
 import moment from 'moment'; // 👇 Đã import thì phải dùng ở dưới
 
 // Import API
-import { getAllSocialAccounts, getYouTubeChannels } from '../services/api';
+import { getAllSocialAccounts, getYouTubeChannels, BASE_URL } from '../services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -20,16 +20,13 @@ const YoutubeIntegration = () => {
   
   const [channels, setChannels] = useState([]); 
   
-  // URL Backend
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     if (queryParams.get('success')) {
         message.success("Kết nối YouTube thành công!");
     }
     fetchYoutubeAccounts();
-  }, [location]);
+  }, [location.search]);
 
   const fetchYoutubeAccounts = async () => {
     setLoading(true);
@@ -64,7 +61,7 @@ const YoutubeIntegration = () => {
   const handleAuthorize = () => {
     const token = localStorage.getItem('access_token');
     if (!token) return message.error("Vui lòng đăng nhập");
-    window.location.href = `${API_URL}/api/v1/youtube/authorize?token=${token}`;
+    window.location.href = `${BASE_URL}/youtube/authorize?token=${token}`;
   };
 
   const handleAccountChange = (val) => {

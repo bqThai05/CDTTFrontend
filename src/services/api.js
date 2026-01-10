@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Backend server URL
-const BASE_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1'; 
+export const BASE_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1'; 
 
 const api = axios.create({
   baseURL: BASE_URL,

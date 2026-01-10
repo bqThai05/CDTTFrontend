@@ -13,7 +13,8 @@ import {
   getAllSocialAccounts, 
   getFacebookPages, 
   getFacebookPagePosts, 
-  getFacebookPageAnalytics 
+  getFacebookPageAnalytics,
+  BASE_URL
 } from '../services/api';
 
 const { Title, Text } = Typography;
@@ -34,9 +35,6 @@ const FacebookIntegration = () => {
   
   const [posts, setPosts] = useState([]); // Bài đăng trên Page
   const [analytics, setAnalytics] = useState([]); // Dữ liệu phân tích
-
-  // URL Backend
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
     // Check callback nếu vừa redirect về từ Facebook
@@ -116,7 +114,7 @@ const FacebookIntegration = () => {
   const handleAuthorize = () => {
     const token = localStorage.getItem('access_token');
     if (!token) return message.error("Vui lòng đăng nhập");
-    window.location.href = `${API_URL}/api/v1/facebook/authorize?token=${token}`;
+    window.location.href = `${BASE_URL}/facebook/authorize?token=${token}`;
   };
 
   // Cột cho bảng bài viết

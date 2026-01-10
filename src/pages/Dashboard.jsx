@@ -1,6 +1,6 @@
 // src/pages/Dashboard.jsx
 import React, { useState } from 'react';
-import { Card, Row, Col, Statistic, Avatar, Typography, Button, List, Tag, Modal, Spin } from 'antd';
+import { Card, Row, Col, Statistic, Avatar, Typography, Button, Tag, Modal, Spin, Flex } from 'antd';
 import { 
   ArrowUpOutlined, 
   YoutubeFilled, 
@@ -70,13 +70,13 @@ const Dashboard = () => {
           <Row gutter={[24, 24]}>
             <Col xs={24} sm={12} lg={6}>
                 <Card variant="borderless" style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                    <Statistic title="Tổng lượt xem" value={totalViews} prefix={<EyeOutlined />} valueStyle={{ color: '#3f8600' }} />
+                    <Statistic title="Tổng lượt xem" value={totalViews} prefix={<EyeOutlined />} styles={{ content: { color: '#3f8600' } }} />
                     <div style={{ color: 'green', marginTop: 8 }}><ArrowUpOutlined /> +12% tuần này</div>
                 </Card>
             </Col>
             <Col xs={24} sm={12} lg={6}>
                 <Card variant="borderless" style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                    <Statistic title="Tổng người theo dõi" value={totalSubs} prefix={<UsergroupAddOutlined />} valueStyle={{ color: '#1677ff' }} />
+                    <Statistic title="Tổng người theo dõi" value={totalSubs} prefix={<UsergroupAddOutlined />} styles={{ content: { color: '#1677ff' } }} />
                     <div style={{ color: 'green', marginTop: 8 }}><ArrowUpOutlined /> +{totalAccounts} kênh</div>
                 </Card>
             </Col>
@@ -88,7 +88,7 @@ const Dashboard = () => {
             </Col>
             <Col xs={24} sm={12} lg={6}>
                 <Card variant="borderless" style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                    <Statistic title="Tương tác TB" value="8.2%" prefix={<LikeOutlined />} valueStyle={{ color: '#cf1322' }} />
+                    <Statistic title="Tương tác TB" value="8.2%" prefix={<LikeOutlined />} styles={{ content: { color: '#cf1322' } }} />
                      <Text type="secondary" style={{ marginTop: 8, display: 'block' }}>Ổn định</Text>
                 </Card>
             </Col>
@@ -125,19 +125,27 @@ const Dashboard = () => {
                       <Tag color="red">{accounts.youtube.length}</Tag>
                   </div>
                   <div style={{ background: '#fff' }}>
-                      <List
-                        itemLayout="horizontal"
-                        dataSource={accounts.youtube}
-                        renderItem={item => (
-                          <List.Item style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>
-                            <List.Item.Meta
-                              avatar={<Avatar src={item.avatar} size={40} style={{ border: '2px solid #ff0000' }} />}
-                              title={<span style={{ fontWeight: 600 }}>{item.name}</span>}
-                              description={<span style={{ fontSize: 12, color: '#888' }}>{item.email}</span>}
-                            />
-                          </List.Item>
-                        )}
-                      />
+                      <Flex vertical>
+                        {accounts.youtube.map(item => (
+                          <div 
+                            key={item.id}
+                            style={{ 
+                              padding: '12px 16px', 
+                              borderBottom: '1px solid #f0f0f0', 
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12
+                            }}
+                          >
+                            <Avatar src={item.avatar} size={40} style={{ border: '2px solid #ff0000' }} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, color: 'rgba(0, 0, 0, 0.88)' }}>{item.name}</div>
+                              <div style={{ fontSize: 12, color: '#888' }}>{item.email}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </Flex>
                   </div>
 
                   {/* List Facebook */}
@@ -148,19 +156,27 @@ const Dashboard = () => {
                       <Tag color="blue">{accounts.facebook.length}</Tag>
                   </div>
                   <div style={{ background: '#fff' }}>
-                      <List
-                        itemLayout="horizontal"
-                        dataSource={accounts.facebook}
-                        renderItem={item => (
-                          <List.Item style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>
-                            <List.Item.Meta
-                              avatar={<Avatar src={item.avatar} size={40} style={{ border: '2px solid #1877f2' }} />}
-                              title={<span style={{ fontWeight: 600 }}>{item.name}</span>}
-                              description={<span style={{ fontSize: 12, color: '#888' }}>{item.email}</span>}
-                            />
-                          </List.Item>
-                        )}
-                      />
+                      <Flex vertical>
+                        {accounts.facebook.map(item => (
+                          <div 
+                            key={item.id}
+                            style={{ 
+                              padding: '12px 16px', 
+                              borderBottom: '1px solid #f0f0f0', 
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12
+                            }}
+                          >
+                            <Avatar src={item.avatar} size={40} style={{ border: '2px solid #1877f2' }} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, color: 'rgba(0, 0, 0, 0.88)' }}>{item.name}</div>
+                              <div style={{ fontSize: 12, color: '#888' }}>{item.email}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </Flex>
                   </div>
               </Card>
           </Col>

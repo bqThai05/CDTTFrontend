@@ -379,7 +379,7 @@ const LandingPage = () => {
                 
                 <Col xs={12} md={5}>
                     <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 25, color: '#fff' }}>Sản phẩm</div>
-                    <Space direction="vertical" style={{ color: '#888' }} size={15}>
+                    <Space orientation="vertical" style={{ color: '#888' }} size={15}>
                         <a href="#" style={{color: '#888'}}>Tính năng</a>
                         <a href="#" style={{color: '#888'}}>Bảng giá</a>
                         <a href="#" style={{color: '#888'}}>API</a>
@@ -389,7 +389,7 @@ const LandingPage = () => {
                 
                 <Col xs={12} md={5}>
                     <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 25, color: '#fff' }}>Công ty</div>
-                    <Space direction="vertical" style={{ color: '#888' }} size={15}>
+                    <Space orientation="vertical" style={{ color: '#888' }} size={15}>
                         <a href="#" style={{color: '#888'}}>Về chúng tôi</a>
                         <a href="#" style={{color: '#888'}}>Blog</a>
                         <a href="#" style={{color: '#888'}}>Tuyển dụng</a>
@@ -399,7 +399,7 @@ const LandingPage = () => {
                 
                 <Col xs={24} md={6}>
                     <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 25, color: '#fff' }}>Liên hệ</div>
-                    <Space direction="vertical" style={{ color: '#888' }} size={15}>
+                    <Space orientation="vertical" style={{ color: '#888' }} size={15}>
                         <span style={{display: 'flex', gap: 10}}><MailOutlined /> contact@socialpro.vn</span>
                         <span style={{display: 'flex', gap: 10}}><PhoneOutlined /> 1900 1234</span>
                         <span style={{display: 'flex', gap: 10}}><EnvironmentOutlined /> Hồ Chí Minh, Việt Nam</span>
