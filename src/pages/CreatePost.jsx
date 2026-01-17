@@ -1,5 +1,5 @@
 // src/pages/CreatePost.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Input, Button, Upload, Row, Col, Typography, DatePicker, message, Avatar, Divider, Modal, Spin, Radio, Select, Switch, Space } from 'antd';
 import { 
   CloudUploadOutlined, 
@@ -24,6 +24,7 @@ import {
   EyeInvisibleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { getAllSocialAccounts, getYouTubeChannels } from '../services/api';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
@@ -42,12 +43,57 @@ const CreatePost = () => {
   const [aiTopic, setAiTopic] = useState('');
 
   // State quản lý tài khoản
-  const myAccounts = [
-    { id: 1, name: 'Review Công Nghệ Z', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
-    { id: 2, name: 'Shop Quần Áo Nam', platform: 'facebook', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack' },
-    { id: 3, name: 'Vlog Đời Sống', platform: 'youtube', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka' },
-  ];
-  const [selectedAccountIds, setSelectedAccountIds] = useState([1]); 
+  const [accounts, setAccounts] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [selectedAccountIds, setSelectedAccountIds] = useState([]); 
+
+  // Fetch accounts from API
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      setLoadingAccounts(true);
+      try {
+        const response = await getAllSocialAccounts();
+        const rawAccounts = response.data || [];
+        
+        // Enrich account data
+        const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
+          if (acc.platform === 'youtube') {
+            try {
+              const channelsRes = await getYouTubeChannels(acc.id);
+              if (channelsRes.data && channelsRes.data.length > 0) {
+                const channel = channelsRes.data[0];
+                return {
+                  ...acc,
+                  name: channel.title || acc.name || acc.username,
+                  avatar: channel.thumbnail || channel.avatar || acc.avatar_url || acc.avatar || acc.picture,
+                  type: 'Channel'
+                };
+              }
+            } catch (e) {
+              console.warn("Lỗi lấy chi tiết kênh YouTube:", e);
+            }
+          }
+          return {
+            ...acc,
+            name: acc.name || acc.username || acc.title || acc.social_id,
+            avatar: acc.avatar_url || acc.avatar || acc.picture || acc.profile_image_url || acc.thumbnail,
+            type: acc.platform === 'youtube' ? 'Channel' : 'Page'
+          };
+        }));
+
+        setAccounts(enrichedAccounts);
+        if (enrichedAccounts.length > 0) {
+          setSelectedAccountIds([enrichedAccounts[0].id]);
+        }
+      } catch (error) {
+        message.error("Không thể tải danh sách tài khoản.");
+        console.error(error);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    fetchAccounts();
+  }, []);
 
   // --- STATE MỚI ---
   const [visibility, setVisibility] = useState('public'); 
@@ -65,7 +111,7 @@ const CreatePost = () => {
     }
   };
 
-  const previewAccount = myAccounts.find(acc => acc.id === selectedAccountIds[selectedAccountIds.length - 1]) || myAccounts[0];
+  const previewAccount = accounts.find(acc => acc.id === selectedAccountIds[selectedAccountIds.length - 1]) || accounts[0] || {};
   const handleUpload = ({ fileList: newFileList }) => setFileList(newFileList);
   const previewImage = fileList.length > 0 ? fileList[0].thumbUrl || URL.createObjectURL(fileList[0].originFileObj) : null;
 
@@ -123,33 +169,35 @@ const CreatePost = () => {
             {/* 1. CHỌN TÀI KHOẢN */}
             <div style={{ marginBottom: 24 }}>
               <Text strong style={{ display: 'block', marginBottom: 12 }}>Đăng lên:</Text>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                 {myAccounts.map(acc => {
-                    const isSelected = selectedAccountIds.includes(acc.id);
-                    return (
-                        <div key={acc.id} onClick={() => toggleAccount(acc.id)}
-                            style={{ 
-                                cursor: 'pointer',
-                                border: isSelected ? `2px solid ${acc.platform === 'youtube' ? '#ff0000' : '#1877f2'}` : '2px solid #f0f0f0',
-                                borderRadius: 8, padding: '8px 12px',
-                                background: isSelected ? (acc.platform === 'youtube' ? '#fff1f0' : '#e6f7ff') : '#fff',
-                                display: 'flex', alignItems: 'center', gap: 10, opacity: isSelected ? 1 : 0.6
-                            }}
-                        >
-                            <div style={{ position: 'relative' }}>
-                                <Avatar src={acc.avatar} size={32} />
-                                {isSelected && <CheckCircleFilled style={{ position: 'absolute', top: -5, right: -5, color: '#52c41a', background: '#fff', borderRadius: '50%' }} />}
-                            </div>
-                            <div style={{ lineHeight: 1.2 }}>
-                                <div style={{ fontWeight: 600, fontSize: 13 }}>{acc.name}</div>
-                                <div style={{ fontSize: 10, color: '#888', textTransform: 'capitalize' }}>
-                                    {acc.platform === 'youtube' ? <YoutubeFilled style={{color:'red'}}/> : <FacebookFilled style={{color:'#1877f2'}}/>} {acc.platform}
+              <Spin spinning={loadingAccounts}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    {accounts.map(acc => {
+                        const isSelected = selectedAccountIds.includes(acc.id);
+                        return (
+                            <div key={acc.id} onClick={() => toggleAccount(acc.id)}
+                                style={{ 
+                                    cursor: 'pointer',
+                                    border: isSelected ? `2px solid ${acc.platform === 'youtube' ? '#ff0000' : '#1877f2'}` : '2px solid #f0f0f0',
+                                    borderRadius: 8, padding: '8px 12px',
+                                    background: isSelected ? (acc.platform === 'youtube' ? '#fff1f0' : '#e6f7ff') : '#fff',
+                                    display: 'flex', alignItems: 'center', gap: 10, opacity: isSelected ? 1 : 0.6
+                                }}
+                            >
+                                <div style={{ position: 'relative' }}>
+                                    <Avatar src={acc.avatar} size={32} />
+                                    {isSelected && <CheckCircleFilled style={{ position: 'absolute', top: -5, right: -5, color: '#52c41a', background: '#fff', borderRadius: '50%' }} />}
+                                </div>
+                                <div style={{ lineHeight: 1.2 }}>
+                                    <div style={{ fontWeight: 600, fontSize: 13 }}>{acc.name}</div>
+                                    <div style={{ fontSize: 10, color: '#888', textTransform: 'capitalize' }}>
+                                        {acc.platform === 'youtube' ? <YoutubeFilled style={{color:'red'}}/> : <FacebookFilled style={{color:'#1877f2'}}/>} {acc.platform}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    );
-                 })}
-              </div>
+                        );
+                    })}
+                </div>
+              </Spin>
             </div>
 
             <Divider />

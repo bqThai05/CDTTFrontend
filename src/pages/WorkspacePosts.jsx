@@ -1,21 +1,24 @@
 import React, { useEffect, useState, useCallback } from 'react';
 
-import { Button, Table, message, Popconfirm, Modal, Form, Input, Space, Typography } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, RocketOutlined } from '@ant-design/icons';
+import { Button, Table, message, Popconfirm, Modal, Form, Input, Space, Typography, Select, Avatar, Tag } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, RocketOutlined, YoutubeFilled, FacebookFilled } from '@ant-design/icons';
 import {
   createWorkspacePost,
   publishWorkspacePostNow,
   getWorkspacePosts,
   updateWorkspacePost,
   deleteWorkspacePost,
+  getWorkspaceSocialAccounts,
 } from '../services/api';
 import { getUserIdFromToken } from '../utils/auth';
 
 const { Text, Paragraph } = Typography;
+const { Option } = Select;
 
 const WorkspacePosts = ({ workspaceId }) => {
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState([]);
+  const [socialAccounts, setSocialAccounts] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [form] = Form.useForm();
@@ -33,9 +36,19 @@ const WorkspacePosts = ({ workspaceId }) => {
     }
   }, [workspaceId]);
 
+  const fetchSocialAccounts = useCallback(async () => {
+    try {
+      const response = await getWorkspaceSocialAccounts(workspaceId);
+      setSocialAccounts(response.data || []);
+    } catch (error) {
+      console.error('Fetch workspace social accounts error:', error);
+    }
+  }, [workspaceId]);
+
   useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
+    fetchSocialAccounts();
+  }, [fetchPosts, fetchSocialAccounts]);
 
   const showModal = (post = null) => {
     setIsModalVisible(true);
@@ -133,6 +146,21 @@ const WorkspacePosts = ({ workspaceId }) => {
       render: (text) => <Paragraph ellipsis={{ rows: 2 }}>{text}</Paragraph>,
     },
     {
+      title: 'Tài khoản MXH',
+      dataIndex: 'social_account_id',
+      key: 'social_account_id',
+      render: (socialAccountId) => {
+        const account = socialAccounts.find(acc => acc.id === socialAccountId);
+        if (!account) return <Tag>Không xác định</Tag>;
+        return (
+          <Space>
+            <Avatar size="small" src={account.avatar_url || account.avatar} icon={account.platform === 'youtube' ? <YoutubeFilled /> : <FacebookFilled />} />
+            <Text>{account.name || account.username}</Text>
+          </Space>
+        );
+      }
+    },
+    {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
@@ -182,6 +210,22 @@ const WorkspacePosts = ({ workspaceId }) => {
         footer={null}
       >
         <Form form={form} layout="vertical" onFinish={handleSavePost}>
+          <Form.Item
+            name="social_account_id"
+            label="Tài khoản mạng xã hội"
+            rules={[{ required: true, message: 'Vui lòng chọn tài khoản để đăng!' }]}
+          >
+            <Select placeholder="Chọn tài khoản mạng xã hội...">
+              {socialAccounts.map(acc => (
+                <Option key={acc.id} value={acc.id}>
+                  <Space>
+                    <Avatar size="small" src={acc.avatar_url || acc.avatar} icon={acc.platform === 'youtube' ? <YoutubeFilled /> : <FacebookFilled />} />
+                    {acc.name || acc.username} ({acc.platform})
+                  </Space>
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
           <Form.Item
             name="title"
             label="Tiêu đề"

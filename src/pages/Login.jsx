@@ -5,10 +5,11 @@ import { UserOutlined, LockOutlined, GiftOutlined, GoogleOutlined, FacebookFille
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import PageTransition from '../components/PageTransition';
+import { BASE_URL } from '../services/api';
 
 const { Title, Text } = Typography;
 
-const API_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1';
+const API_URL = BASE_URL;
 
 const Login = () => {
   const navigate = useNavigate();

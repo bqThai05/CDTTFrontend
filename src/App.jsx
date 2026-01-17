@@ -1,7 +1,6 @@
 // src/App.jsx
 import React from 'react';
-// 👇 1. Đổi BrowserRouter thành HashRouter
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
 // Import các trang
@@ -27,14 +26,31 @@ import MainLayout from './components/MainLayout';
 
 // Component bảo vệ
 const ProtectedRoute = ({ children }) => {
+  const location = useLocation();
   const token = localStorage.getItem('access_token');
-  if (!token) return <Navigate to="/login" replace />;
+  const urlParams = new URLSearchParams(location.search);
+  const urlToken = urlParams.get('token');
+
+  // Nếu không có token trong localStorage nhưng có trong URL, cho phép đi tiếp 
+  // (AnimatedRoutes sẽ lo việc lưu token vào localStorage)
+  if (!token && !urlToken) return <Navigate to="/login" replace />;
+  
   return children;
 };
 
 // --- TÁCH RIÊNG PHẦN ROUTES ĐỂ DÙNG ĐƯỢC useLocation ---
 const AnimatedRoutes = () => {
   const location = useLocation();
+
+  // Kiểm tra và lưu token nếu nó xuất hiện trong URL query (ví dụ sau khi OAuth redirect)
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('access_token', token);
+      console.log('Token đã được cập nhật từ URL');
+    }
+  }, [location]);
 
   return (
     <AnimatePresence mode="wait">
@@ -58,9 +74,11 @@ const AnimatedRoutes = () => {
           }
         >
           <Route path="/profile" element={<Profile />} />
-          <Route path="/dashboard" element={<Dashboard />} /> {/* Thêm dấu / cho chắc */}
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create-post" element={<CreatePost />} />
           <Route path="/accounts" element={<Accounts />} />
+          {/* Thêm route phụ để khớp với redirect từ backend */}
+          <Route path="/social-accounts" element={<Accounts />} />
           <Route path="/feed" element={<PostHistory />} />
           <Route path="/content" element={<ChannelContent />} />
           <Route path="/youtube-integration" element={<YoutubeIntegration />} />
@@ -78,10 +96,9 @@ const AnimatedRoutes = () => {
 
 function App() {
   return (
-    // 👇 2. Dùng HashRouter bọc ngoài cùng
-    <HashRouter>
+    <BrowserRouter>
       <AnimatedRoutes />
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 

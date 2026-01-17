@@ -168,7 +168,7 @@ const FacebookIntegration = () => {
       </div>
 
       {/* SELECT ACCOUNT */}
-      <Card style={{ marginBottom: 24 }} bodyStyle={{ padding: '16px 24px' }}>
+      <Card style={{ marginBottom: 24 }} styles={{ body: { padding: '16px 24px' } }}>
           <Row gutter={16} align="middle">
               <Col>
                   <Text strong>Tài khoản quản lý:</Text>
@@ -192,7 +192,7 @@ const FacebookIntegration = () => {
       <Row gutter={24}>
           {/* CỘT TRÁI: DANH SÁCH PAGES */}
           <Col xs={24} md={7}>
-              <Card title="Danh sách Fanpage" bodyStyle={{ padding: 0, maxHeight: 600, overflowY: 'auto' }}>
+              <Card title="Danh sách Fanpage" styles={{ body: { padding: 0, maxHeight: 600, overflowY: 'auto' } }}>
                   <Spin spinning={loadingData}>
                       {pages.length === 0 ? <Empty description="Không tìm thấy Fanpage" style={{padding: 20}} /> : (
                           pages.map(page => (

@@ -12,7 +12,7 @@ import {
   ExclamationCircleOutlined
 } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { BASE_URL, disconnectSocialAccount, getAllSocialAccounts, getYouTubeChannels } from '../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -24,21 +24,55 @@ const Accounts = () => {
   const navigate = useNavigate();
 
   // URL API Backend
-  const API_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1';
+  const API_URL = BASE_URL;
 
   // 1. Hàm lấy danh sách tài khoản
   const fetchAccounts = async () => {
     setLoading(true);
     try {
-      const [youtubeRes, facebookRes] = await Promise.all([
-        api.get('/youtube/accounts/'),
-        api.get('/facebook/pages/')
-      ]);
-      // Sắp xếp để Youtube và FB xen kẽ hoặc theo thứ tự mới nhất
-      const combinedAccounts = [...(youtubeRes.data || []), ...(facebookRes.data || [])];
-      setAccounts(combinedAccounts);
+      const response = await getAllSocialAccounts();
+      const rawAccounts = response.data || [];
+      console.log("Dữ liệu gốc từ /social:", rawAccounts);
+
+      // Bổ sung thông tin chi tiết cho từng tài khoản
+      const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
+        // Nếu là YouTube và thiếu thông tin tên/ảnh
+        if (acc.platform === 'youtube' && (!acc.name && !acc.username && !acc.title)) {
+          try {
+            // Thử lấy thông tin kênh từ endpoint youtube/channels
+            const channelsRes = await getYouTubeChannels(acc.id || acc.social_id);
+            if (channelsRes.data && channelsRes.data.length > 0) {
+              const channel = channelsRes.data[0];
+              return {
+                ...acc,
+                name: channel.title,
+                avatar: channel.thumbnail,
+                subscribers: channel.subscriber_count,
+                views: channel.view_count
+              };
+            }
+          } catch (e) {
+            console.warn(`Không thể lấy chi tiết kênh cho ${acc.social_id}:`, e);
+          }
+        }
+        return acc;
+      }));
+
+      console.log("Dữ liệu sau khi bổ sung (Enriched):", enrichedAccounts);
+      setAccounts(enrichedAccounts);
     } catch (error) {
       console.error("Lỗi tải danh sách tài khoản:", error);
+      // Fallback nếu endpoint /social chưa ổn định thì dùng lại logic cũ
+      try {
+        const [youtubeRes, facebookRes] = await Promise.all([
+          api.get('/youtube/accounts'),
+          api.get('/facebook/pages')
+        ]);
+        const combinedAccounts = [...(youtubeRes.data || []), ...(facebookRes.data || [])];
+        setAccounts(combinedAccounts);
+      } catch (innerError) {
+        console.error("Lỗi fallback tải tài khoản:", innerError);
+      }
     } finally {
       setLoading(false);
     }
@@ -49,9 +83,16 @@ const Accounts = () => {
     const queryParams = new URLSearchParams(location.search);
     const success = queryParams.get('success');
     const error = queryParams.get('error');
+    const token = queryParams.get('token');
+
+    // Nếu có token trong URL (thường sau khi OAuth redirect), cập nhật vào localStorage
+    if (token) {
+      localStorage.setItem('access_token', token);
+    }
 
     if (success) {
       message.success('Kết nối tài khoản thành công!');
+      // Điều hướng về trang /accounts sạch (không có query params)
       navigate('/accounts', { replace: true });
       fetchAccounts();
     }
@@ -83,8 +124,7 @@ const Accounts = () => {
   };
 
   // 4. Hàm ngắt kết nối
- const handleDisconnect = (id) => {
-    // Sửa lỗi 1: Dùng biến id để in ra log
+  const handleDisconnect = (id) => {
     console.log("Đang yêu cầu ngắt kết nối ID:", id);
 
     Modal.confirm({
@@ -96,13 +136,12 @@ const Accounts = () => {
       cancelText: 'Hủy',
       onOk: async () => {
         try {
-          // Giả lập call API xóa (Logic cũ của bạn)
+          await disconnectSocialAccount(id);
           message.success('Đã ngắt kết nối thành công');
           fetchAccounts(); 
         } catch (error) {
-          // Sửa lỗi 2: Dùng biến error để in ra log
           console.error("Lỗi xóa tài khoản:", error);
-          message.error('Lỗi khi ngắt kết nối');
+          message.error('Lỗi khi ngắt kết nối: ' + (error.response?.data?.detail || 'Vui lòng thử lại sau.'));
         }
       },
     });
@@ -118,9 +157,9 @@ const Accounts = () => {
   };
 
   // Helper: Icon theo nền tảng
-  const getPlatformIcon = (platform) => {
-      if (platform === 'youtube') return <YoutubeFilled style={{ fontSize: 20, color: '#fff' }} />;
-      if (platform === 'facebook') return <FacebookFilled style={{ fontSize: 20, color: '#fff' }} />;
+  const getPlatformIcon = (platform, color = '#fff') => {
+      if (platform === 'youtube') return <YoutubeFilled style={{ fontSize: 32, color }} />;
+      if (platform === 'facebook') return <FacebookFilled style={{ fontSize: 32, color }} />;
       return null;
   };
 
@@ -187,20 +226,33 @@ const Accounts = () => {
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0' }}>
                                     {/* Avatar to đẹp */}
                                     <Avatar 
-                                        src={item.avatar_url} 
+                                        src={
+                                            item.avatar_url || item.avatar || item.picture || 
+                                            item.profile_image_url || item.thumbnail || 
+                                            item.metadata?.avatar_url || item.metadata?.picture ||
+                                            item.channel_thumbnail
+                                        } 
                                         size={80} 
                                         style={{ 
                                             border: `3px solid ${getPlatformColor(item.platform)}`, 
                                             marginBottom: 16,
                                             padding: 2,
-                                            background: '#fff'
+                                            background: '#fff',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
                                         }} 
-                                        icon={getPlatformIcon(item.platform)}
+                                        icon={getPlatformIcon(item.platform, getPlatformColor(item.platform))}
                                     />
                                     
                                     {/* Tên tài khoản */}
                                     <Title level={4} style={{ marginBottom: 4, width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {item.username || item.social_id}
+                                        {
+                                            item.name || item.username || item.title || 
+                                            item.full_name || item.display_name || item.nickname || 
+                                            item.metadata?.name || item.metadata?.username ||
+                                            item.channel_title || item.social_id
+                                        }
                                     </Title>
                                     
                                     {/* Trạng thái hoạt động */}

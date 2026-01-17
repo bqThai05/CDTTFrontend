@@ -2,7 +2,8 @@
 import axios from 'axios';
 
 // Backend server URL
-export const BASE_URL = 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1'; 
+export const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/v1` : 'https://api.socialpro.io.vn/api/v1'; 
+// export const BASE_URL = 'http://localhost:8000/api/v1'; 
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -75,9 +76,9 @@ const updateUserProfile = (data) => api.put('/users/me', data);
 // ============================================================
 // 3. WORKSPACE API
 // ============================================================
-const getWorkspaces = () => api.get('/workspaces/');
+const getWorkspaces = () => api.get('/workspaces');
 const getWorkspaceDetails = (workspaceId) => api.get(`/workspaces/${workspaceId}`);
-const createWorkspace = (workspaceData) => api.post('/workspaces/', workspaceData);
+const createWorkspace = (workspaceData) => api.post('/workspaces', workspaceData);
 const updateWorkspace = (workspaceId, data) => api.put(`/workspaces/${workspaceId}`, data);
 const deleteWorkspace = (workspaceId) => api.delete(`/workspaces/${workspaceId}`);
 
@@ -90,6 +91,11 @@ const leaveWorkspace = (workspaceId) => api.post(`/workspaces/${workspaceId}/lea
 const transferWorkspaceOwnership = (workspaceId, newOwnerId) => api.post(`/workspaces/${workspaceId}/transfer-ownership/${newOwnerId}`);
 const getUserWorkspacePermissions = (workspaceId, userId) => api.get(`/workspaces/${workspaceId}/permissions/${userId}`);
 const acceptWorkspaceInvitation = (token) => api.post('/workspaces/accept-invite', null, { params: { token } });
+
+// Social Accounts in Workspace
+const getWorkspaceSocialAccounts = (workspaceId) => api.get(`/workspaces/${workspaceId}/social-accounts`);
+const linkSocialAccountToWorkspace = (workspaceId, socialAccountId) => api.post(`/workspaces/${workspaceId}/social-accounts`, { social_account_id: socialAccountId });
+const unlinkSocialAccountFromWorkspace = (workspaceId, socialAccountId) => api.delete(`/workspaces/${workspaceId}/social-accounts/${socialAccountId}`);
 
 // Inbox & Logs
 const getWorkspaceLogs = (workspaceId) => api.get(`/workspaces/${workspaceId}/logs`);
@@ -114,11 +120,35 @@ const getWorkspaceAnalytics = (workspaceId) => api.get(`/posts/${workspaceId}/an
 // 5. SOCIAL ACCOUNT API (Tổng hợp & YouTube)
 // ============================================================
 // Lấy danh sách tài khoản MXH
-const getAllSocialAccounts = () => api.get('/social/'); 
+const getAllSocialAccounts = () => api.get('/social'); 
 // Ngắt kết nối MXH
 const disconnectSocialAccount = (id) => api.delete(`/social/${id}`);
 // Lấy kênh Youtube (để tính view/sub)
 const getYouTubeChannels = (socialAccountId) => api.get(`/youtube/channels/${socialAccountId}`);
+// Lấy video của kênh Youtube
+const getYouTubeChannelVideos = (channelId) => api.get(`/youtube/channels/${channelId}/videos`);
+// Cập nhật video Youtube
+const updateYouTubeVideo = (videoId, data) => api.put(`/youtube/videos/${videoId}`, data);
+// Xóa video Youtube
+const deleteYouTubeVideo = (videoId) => api.delete(`/youtube/videos/${videoId}`);
+// Lấy bình luận của video Youtube
+const getYouTubeVideoComments = (videoId) => api.get(`/youtube/videos/${videoId}/comments`);
+// Trả lời bình luận Youtube
+const replyToYouTubeComment = (commentId, text) => api.post(`/youtube/comments/${commentId}/reply`, { text });
+// Lấy danh sách playlist của kênh Youtube
+const getYouTubeChannelPlaylists = (channelId) => api.get(`/youtube/channels/${channelId}/playlists`);
+// Lấy danh sách video trong playlist
+const getYouTubePlaylistItems = (playlistId) => api.get(`/youtube/playlists/${playlistId}/items`);
+// Tạo danh sách phát mới
+const createYouTubePlaylist = (data) => api.post('/youtube/playlists', data);
+// Cập nhật danh sách phát
+const updateYouTubePlaylist = (playlistId, data) => api.put(`/youtube/playlists/${playlistId}`, data);
+// Xóa danh sách phát
+const deleteYouTubePlaylist = (playlistId) => api.delete(`/youtube/playlists/${playlistId}`);
+// Thêm video vào danh sách phát
+const addVideoToYouTubePlaylist = (playlistId, data) => api.post(`/youtube/playlists/${playlistId}/items`, data);
+// Xóa video khỏi danh sách phát
+const deleteYouTubePlaylistItem = (playlistId, itemId) => api.delete(`/youtube/playlists/${playlistId}/items/${itemId}`);
 
 // ============================================================
 // 6. FACEBOOK API
@@ -160,6 +190,9 @@ export {
   updateWorkspaceMemberRole,
   removeWorkspaceMember,
   getUserWorkspacePermissions,
+  getWorkspaceSocialAccounts,
+  linkSocialAccountToWorkspace,
+  unlinkSocialAccountFromWorkspace,
   
   // Workspace Logs & Inbox
   getWorkspaceLogs,
@@ -182,6 +215,18 @@ export {
   
   // YouTube
   getYouTubeChannels,
+  getYouTubeChannelVideos,
+  updateYouTubeVideo,
+  deleteYouTubeVideo,
+  getYouTubeVideoComments,
+  replyToYouTubeComment,
+  getYouTubeChannelPlaylists,
+  getYouTubePlaylistItems,
+  createYouTubePlaylist,
+  updateYouTubePlaylist,
+  deleteYouTubePlaylist,
+  addVideoToYouTubePlaylist,
+  deleteYouTubePlaylistItem,
   
   // Facebook
   getFacebookPages,

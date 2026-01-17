@@ -7,6 +7,7 @@ import WorkspaceMembers from './WorkspaceMembers';
 import WorkspacePosts from './WorkspacePosts';
 import WorkspaceLogs from './WorkspaceLogs';
 import WorkspaceInbox from './WorkspaceInbox';
+import WorkspaceSocialAccounts from './WorkspaceSocialAccounts';
 
 const { Title, Text } = Typography;
 
@@ -112,6 +113,11 @@ const WorkspaceDetail = () => {
               label: 'Hộp thư đến',
               key: 'inbox',
               children: <WorkspaceInbox workspaceId={workspaceId} />,
+            },
+            {
+              label: 'Tài khoản MXH',
+              key: 'social_accounts',
+              children: <WorkspaceSocialAccounts workspaceId={workspaceId} />,
             },
           ]} />
 
