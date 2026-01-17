@@ -300,6 +300,7 @@ const ChannelContent = () => {
       // Bổ sung thông tin chi tiết (Làm giàu dữ liệu giống trang Accounts)
       const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
         if (acc.platform === 'youtube') {
+          // Nếu đã có đủ thông tin cơ bản thì ưu tiên dùng luôn, tránh gọi API làm giàu nếu không cần thiết
           const fallbackAcc = {
             ...acc,
             name: acc.name || acc.username || acc.social_id || 'Kênh YouTube',
@@ -311,8 +312,16 @@ const ChannelContent = () => {
             type: 'Channel'
           };
 
+          // Nếu đã có đủ name và avatar thì có thể coi là đã đủ thông tin cơ bản
+          // Tuy nhiên vẫn thử làm giàu để lấy số sub/view mới nhất nếu được
           try {
-            const channelsRes = await getYouTubeChannels(acc.id);
+            // Kiểm tra acc.id trước khi gọi
+            if (!acc.id) return fallbackAcc;
+
+            // THỬ NGHIỆM: Nếu platform là youtube, thử dùng social_id (UC...) thay vì id (1)
+            // Vì có vẻ backend trên cloud mong đợi channel_id của YouTube hơn là DB ID của social_account
+            const targetId = acc.social_id || acc.id;
+            const channelsRes = await getYouTubeChannels(targetId);
             if (channelsRes.data && channelsRes.data.length > 0) {
               const channel = channelsRes.data[0];
               return {
@@ -330,6 +339,7 @@ const ChannelContent = () => {
             }
           } catch (e) {
             console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
+            // Trả về dữ liệu hiện có nếu API làm giàu lỗi
             return fallbackAcc;
           }
           return fallbackAcc;
