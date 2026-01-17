@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Table, Button, message, Space, Typography, Modal, Select, Avatar, Tag } from 'antd';
-import { PlusOutlined, DeleteOutlined, YoutubeFilled, FacebookFilled, LinkOutlined } from '@ant-design/icons';
+import { DeleteOutlined, YoutubeFilled, FacebookFilled, LinkOutlined } from '@ant-design/icons';
 import { 
   getWorkspaceSocialAccounts, 
   linkSocialAccountToWorkspace, 
@@ -28,29 +28,30 @@ const WorkspaceSocialAccounts = ({ workspaceId }) => {
       // Làm giàu dữ liệu cho tài khoản YouTube
       const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
         if (acc.platform === 'youtube') {
-          // Luôn gán fallback trước để tránh hiển thị trống khi API lỗi
+          // Nếu đã có đủ thông tin thì không cần gọi API làm giàu nữa để tránh lỗi 500
+          if (acc.name && acc.avatar_url) {
+            return acc;
+          }
+
           const fallbackAcc = {
             ...acc,
             name: acc.name || acc.username || acc.social_id || 'Kênh YouTube',
             avatar_url: acc.avatar_url || acc.avatar || 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png'
           };
 
-          if (!acc.name || !acc.avatar_url) {
-            try {
-              const channelsRes = await getYouTubeChannels(acc.id);
-              if (channelsRes.data && channelsRes.data.length > 0) {
-                const channel = channelsRes.data[0];
-                return {
-                  ...acc,
-                  name: channel.title || fallbackAcc.name,
-                  avatar_url: channel.thumbnail || fallbackAcc.avatar_url
-                };
-              }
-            } catch (e) {
-              // Chỉ log cảnh báo, không làm gián đoạn luồng xử lý
-              console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
-              return fallbackAcc;
+          try {
+            const channelsRes = await getYouTubeChannels(acc.id);
+            if (channelsRes.data && channelsRes.data.length > 0) {
+              const channel = channelsRes.data[0];
+              return {
+                ...acc,
+                name: channel.title || fallbackAcc.name,
+                avatar_url: channel.thumbnail || fallbackAcc.avatar_url
+              };
             }
+          } catch {
+            // Lỗi này thường do token hết hạn hoặc backend chưa sync kịp
+            return fallbackAcc;
           }
           return fallbackAcc;
         }
@@ -78,27 +79,28 @@ const WorkspaceSocialAccounts = ({ workspaceId }) => {
       // Làm giàu dữ liệu cho tài khoản YouTube
       const enrichedAccounts = await Promise.all(filtered.map(async (acc) => {
         if (acc.platform === 'youtube') {
+          if (acc.name && acc.avatar_url) {
+            return acc;
+          }
+
           const fallbackAcc = {
             ...acc,
             name: acc.name || acc.username || acc.social_id || 'Kênh YouTube',
             avatar_url: acc.avatar_url || acc.avatar || 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png'
           };
 
-          if (!acc.name || !acc.avatar_url) {
-            try {
-              const channelsRes = await getYouTubeChannels(acc.id);
-              if (channelsRes.data && channelsRes.data.length > 0) {
-                const channel = channelsRes.data[0];
-                return {
-                  ...acc,
-                  name: channel.title || fallbackAcc.name,
-                  avatar_url: channel.thumbnail || fallbackAcc.avatar_url
-                };
-              }
-            } catch (e) {
-              console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
-              return fallbackAcc;
+          try {
+            const channelsRes = await getYouTubeChannels(acc.id);
+            if (channelsRes.data && channelsRes.data.length > 0) {
+              const channel = channelsRes.data[0];
+              return {
+                ...acc,
+                name: channel.title || fallbackAcc.name,
+                avatar_url: channel.thumbnail || fallbackAcc.avatar_url
+              };
             }
+          } catch {
+            return fallbackAcc;
           }
           return fallbackAcc;
         }

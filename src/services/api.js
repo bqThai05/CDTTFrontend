@@ -29,12 +29,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
+    // Nếu request có flag silent thì không log error ra console
+    if (!error.config?.silent) {
+      console.error('API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+    }
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       // Tránh reload vòng lặp nếu đang ở trang login/register
@@ -124,7 +128,7 @@ const getAllSocialAccounts = () => api.get('/social');
 // Ngắt kết nối MXH
 const disconnectSocialAccount = (id) => api.delete(`/social/${id}`);
 // Lấy kênh Youtube (để tính view/sub)
-const getYouTubeChannels = (socialAccountId) => api.get(`/youtube/channels/${socialAccountId}`);
+const getYouTubeChannels = (socialAccountId) => api.get(`/youtube/channels/${socialAccountId}`, { silent: true });
 // Lấy video của kênh Youtube
 const getYouTubeChannelVideos = (channelId) => api.get(`/youtube/channels/${channelId}/videos`);
 // Cập nhật video Youtube

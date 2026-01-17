@@ -13,10 +13,8 @@ import {
   CheckCircleFilled,
   ScheduleOutlined,
   ThunderboltFilled,
-  RobotOutlined,
   VideoCameraOutlined,
   FileTextOutlined,
-  DislikeOutlined,
   EnvironmentOutlined,
   TeamOutlined,
   LockOutlined,
@@ -58,6 +56,16 @@ const CreatePost = () => {
         // Enrich account data
         const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
           if (acc.platform === 'youtube') {
+            // Nếu đã có đủ thông tin thì không cần gọi API làm giàu nữa
+            if (acc.name && (acc.avatar_url || acc.avatar)) {
+              return {
+                ...acc,
+                name: acc.name,
+                avatar: acc.avatar_url || acc.avatar,
+                type: 'Channel'
+              };
+            }
+
             const fallbackAcc = {
               ...acc,
               name: acc.name || acc.username || acc.title || acc.social_id || 'Kênh YouTube',
@@ -76,8 +84,7 @@ const CreatePost = () => {
                   type: 'Channel'
                 };
               }
-            } catch (e) {
-              console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
+            } catch {
               return fallbackAcc;
             }
             return fallbackAcc;
@@ -132,10 +139,12 @@ const CreatePost = () => {
   const [lastPlatform, setLastPlatform] = useState(previewAccount?.platform);
 
   // Reset visibility về mặc định khi đổi nền tảng để tránh lỗi logic
-  if (previewAccount?.platform !== lastPlatform) {
-    setLastPlatform(previewAccount?.platform);
-    setVisibility('public');
-  }
+  useEffect(() => {
+    if (previewAccount?.platform && previewAccount.platform !== lastPlatform) {
+      setLastPlatform(previewAccount.platform);
+      setVisibility('public');
+    }
+  }, [previewAccount?.platform, lastPlatform]);
 
   // Render Icon chế độ hiển thị (SỬA LẠI LOGIC)
   const getVisibilityIcon = () => {
