@@ -76,9 +76,8 @@ const CreatePost = () => {
             };
 
             try {
-              // Ưu tiên dùng social_id (UC...) cho YouTube để tránh lỗi 500 trên cloud
-              const targetId = acc.social_id || acc.id;
-              const channelsRes = await getYouTubeChannels(targetId);
+              // Sử dụng ID từ database (integer) để tránh lỗi 422
+              const channelsRes = await getYouTubeChannels(acc.id);
               if (channelsRes.data && channelsRes.data.length > 0) {
                 const channel = channelsRes.data[0];
                 return {

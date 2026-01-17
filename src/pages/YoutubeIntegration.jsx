@@ -95,7 +95,7 @@ const YoutubeIntegration = () => {
                 onChange={handleAccountChange}
               >
                   {accounts.map(acc => (
-                      <Option key={acc.id} value={acc.social_id || acc.id}>{acc.name || acc.username}</Option>
+                      <Option key={acc.id} value={acc.id}>{acc.name || acc.username}</Option>
                   ))}
               </Select>
           </div>

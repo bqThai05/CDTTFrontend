@@ -318,10 +318,8 @@ const ChannelContent = () => {
             // Kiểm tra acc.id trước khi gọi
             if (!acc.id) return fallbackAcc;
 
-            // THỬ NGHIỆM: Nếu platform là youtube, thử dùng social_id (UC...) thay vì id (1)
-            // Vì có vẻ backend trên cloud mong đợi channel_id của YouTube hơn là DB ID của social_account
-            const targetId = acc.social_id || acc.id;
-            const channelsRes = await getYouTubeChannels(targetId);
+            // Sử dụng ID từ database (integer) để tránh lỗi 422
+            const channelsRes = await getYouTubeChannels(acc.id);
             if (channelsRes.data && channelsRes.data.length > 0) {
               const channel = channelsRes.data[0];
               return {
