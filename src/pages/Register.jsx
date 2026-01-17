@@ -1,11 +1,10 @@
 // src/pages/Register.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Form, Input, Button, message, Alert, Typography } from 'antd';
-// 1. Nhớ import RocketFilled ở đây
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, ArrowLeftOutlined, RocketFilled } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser, verifyEmail, acceptWorkspaceInvitation } from '../services/api';
-import PageTransition from '../components/PageTransition'; // Giữ hiệu ứng chuyển trang
+import PageTransition from '../components/PageTransition';
 
 const { Title, Text } = Typography;
 
@@ -27,14 +26,13 @@ const Register = () => {
     }
   }, [showVerificationForm, registeredEmail, verifyForm]);
 
-  // --- LOGIC GIỮ NGUYÊN ---
   const onFinish = async (values) => {
     setLoading(true);
     try {
       const payload = {
         email: values.email,
         username: values.username,
-        full_name: values.username, // Thêm full_name dự phòng cho backend
+        full_name: values.username, 
         phone_number: values.phone_number,
         password: values.password
       };
@@ -98,7 +96,7 @@ const Register = () => {
     <PageTransition>
       <div style={{ height: '100vh', display: 'flex', overflow: 'hidden', background: '#fffcf5' }}>
         
-        {/* CỘT TRÁI: POSTER TẾT */}
+        {/* CỘT TRÁI (Giữ nguyên) */}
         <div style={{ 
             flex: 1, 
             background: 'url(https://images.unsplash.com/photo-1516013069176-79c88554236a?q=80&w=1887&auto=format&fit=crop) center/cover no-repeat',
@@ -121,7 +119,6 @@ const Register = () => {
         {/* CỘT PHẢI: FORM ĐĂNG KÝ */}
         <div style={{ flex: '0 0 550px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflowY: 'auto' }}>
           
-          {/* Lồng đèn SVG treo góc phải (Giữ nguyên cho đẹp) */}
           <div style={{ position: 'absolute', top: 0, right: 30, animation: 'swing 3s infinite ease-in-out', transformOrigin: 'top center', zIndex: 10 }}>
               <svg width="60" height="100" viewBox="0 0 100 180" fill="none">
                   <line x1="50" y1="0" x2="50" y2="40" stroke="#d4145a" strokeWidth="3"/>
@@ -136,16 +133,7 @@ const Register = () => {
 
           <div style={{ width: '100%', maxWidth: 420, padding: '40px 25px' }}>
               <div style={{ textAlign: 'center', marginBottom: 25 }}>
-                  
-                  {/* --- 2. LOGO TÊN LỬA (Đã bỏ khung tròn) --- */}
-                  <RocketFilled 
-                    style={{ 
-                        fontSize: '50px', // To đẹp
-                        color: '#d4145a', // Màu đỏ tết
-                        marginBottom: 15  // Cách tiêu đề ra
-                    }} 
-                  />
-
+                  <RocketFilled style={{ fontSize: '50px', color: '#d4145a', marginBottom: 15 }} />
                   <Title level={2} className="text-gradient-tet" style={{margin: 0}}>
                       {showVerificationForm ? 'Xác Minh OTP' : 'Đăng Ký Tài Khoản'}
                   </Title>
@@ -167,16 +155,41 @@ const Register = () => {
                           </Form.Item>
                       </div>
 
-                      <Form.Item name="password" rules={[{ required: true, message: 'Nhập mật khẩu!' }]} style={{marginBottom: 15}}>
+                      {/* --- PHẦN BẮT LỖI MẬT KHẨU MỚI --- */}
+                      <Form.Item 
+                        name="password" 
+                        rules={[
+                            { required: true, message: 'Vui lòng nhập mật khẩu!' },
+                            { min: 10, message: 'Mật khẩu phải từ 10 ký tự trở lên!' },
+                            { 
+                                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).+$/,
+                                message: 'Mật khẩu phải có chữ Hoa, chữ thường và ký tự đặc biệt!' 
+                            }
+                        ]} 
+                        style={{marginBottom: 15}}
+                        hasFeedback
+                      >
                           <Input.Password prefix={<LockOutlined style={{color:'#d4145a'}}/>} placeholder="Mật khẩu" style={{borderRadius: 8}}/>
                       </Form.Item>
 
-                      <Form.Item name="confirm" dependencies={['password']} hasFeedback rules={[{ required: true, message: 'Xác nhận lại!' }, ({ getFieldValue }) => ({ validator(_, value) { if (!value || getFieldValue('password') === value) return Promise.resolve(); return Promise.reject(new Error('Không khớp!')); }, })]} style={{marginBottom: 25}}>
+                      <Form.Item 
+                        name="confirm" 
+                        dependencies={['password']} 
+                        hasFeedback 
+                        rules={[
+                            { required: true, message: 'Xác nhận lại!' }, 
+                            ({ getFieldValue }) => ({ validator(_, value) { 
+                                if (!value || getFieldValue('password') === value) return Promise.resolve(); 
+                                return Promise.reject(new Error('Mật khẩu không khớp!')); 
+                            }, })
+                        ]} 
+                        style={{marginBottom: 25}}
+                      >
                           <Input.Password prefix={<LockOutlined style={{color:'#d4145a'}}/>} placeholder="Nhập lại mật khẩu" style={{borderRadius: 8}}/>
                       </Form.Item>
 
                       <Form.Item>
-                          <Button type="primary" htmlType="submit" block loading={loading} icon={<RocketFilled />} // Icon nút bấm đổi luôn cho đồng bộ
+                          <Button type="primary" htmlType="submit" block loading={loading} icon={<RocketFilled />}
                               style={{ 
                                   height: 48, borderRadius: 24, fontSize: 16, fontWeight: 'bold',
                                   background: 'linear-gradient(90deg, #d4145a, #fbb03b)', border: 'none'

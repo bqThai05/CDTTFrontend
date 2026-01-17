@@ -138,46 +138,62 @@ const ChannelContent = () => {
   const [loadingPlaylistItems, setLoadingPlaylistItems] = useState(false);
   const [activePlaylist, setActivePlaylist] = useState(null);
 
+  // Tìm dòng: const fetchYouTubeVideos = useCallback(async (dbId, socialId) => {
+  // Thay thế toàn bộ nội dung hàm đó bằng code dưới đây:
+
   const fetchYouTubeVideos = useCallback(async (dbId, socialId) => {
     setLoadingVideos(true);
     try {
       let targetId = dbId || socialId;
-      console.log(`Đang thử lấy video với ID: ${targetId}`);
+      console.log(`Đang lấy video thật từ API với ID: ${targetId}`);
       
       let res = await getYouTubeChannelVideos(targetId);
       let rawVideos = Array.isArray(res.data) ? res.data : (res.data?.videos || []);
       
-      // Nếu không có video và còn socialId khác để thử
+      // Fallback: Nếu không tìm thấy video bằng dbId, thử lại bằng socialId
       if (rawVideos.length === 0 && dbId && socialId && dbId !== socialId) {
-        console.log(`Không có video với ID ${dbId}, đang thử với socialId: ${socialId}`);
         res = await getYouTubeChannelVideos(socialId);
         rawVideos = Array.isArray(res.data) ? res.data : (res.data?.videos || []);
       }
       
-      console.log("Kết quả trả về từ API videos:", res.data);
-      
       const ytVideos = rawVideos.map(v => ({
         id: v.video_id || v.id || Math.random(),
-        real_id: v.video_id || v.id, // ID thật để gọi API
+        real_id: v.video_id || v.id,
         title: v.title || v.snippet?.title || 'Không có tiêu đề',
         description: v.description || v.snippet?.description || '',
         thumbnail: v.thumbnail_url || v.thumbnail || v.snippet?.thumbnails?.medium?.url || v.snippet?.thumbnails?.default?.url,
         duration: v.duration || 'N/A',
         privacy: v.privacy_status || v.status?.privacyStatus || 'public',
-        date: v.published_at ? v.published_at.split('T')[0] : (v.created_at ? v.created_at.split('T')[0] : 'N/A'),
+        date: v.published_at ? v.published_at.split('T')[0] : 'N/A',
         views: parseInt(v.view_count || v.views || v.statistics?.viewCount) || 0,
         likes: parseInt(v.like_count || v.likes || v.statistics?.likeCount) || 0,
         comments: parseInt(v.comment_count || v.comments || v.statistics?.commentCount) || 0,
         tags: v.tags || v.snippet?.tags || [],
         category_id: v.category_id || v.snippet?.categoryId,
-        url: v.video_id ? `https://www.youtube.com/watch?v=${v.video_id}` : (v.id ? `https://www.youtube.com/watch?v=${v.id}` : null),
-        // Các trường bổ sung từ Pydantic model
-        definition: v.definition || 'hd',
-        caption: v.caption || 'false',
-        made_for_kids: v.made_for_kids || false,
-        licensed_content: v.licensed_content || false
+        url: v.video_id ? `https://www.youtube.com/watch?v=${v.video_id}` : null,
       }));
+      
       setVideos(ytVideos);
+
+      // --- ĐOẠN MỚI THÊM: Tính tổng view thật ---
+      if (ytVideos.length > 0) {
+          const realTotalViews = ytVideos.reduce((sum, item) => sum + item.views, 0);
+          console.log("Tổng view thực tế tính được:", realTotalViews);
+
+          // Cập nhật ngược lại state selectedAccount để Header hiển thị đúng
+          setSelectedAccount(prev => {
+              if (prev) {
+                  return {
+                      ...prev,
+                      view_count: realTotalViews, // Ghi đè bằng số liệu thật
+                      video_count: ytVideos.length
+                  };
+              }
+              return prev;
+          });
+      }
+      // ------------------------------------------
+
     } catch (error) {
       console.error("Lỗi tải video:", error);
       setVideos([]);
@@ -290,43 +306,41 @@ const ChannelContent = () => {
     }
   }, [selectedAccount?.id]); 
 
+  // Tìm dòng: const fetchAccounts = useCallback(async () => {
+  // Thay thế toàn bộ nội dung hàm đó bằng code dưới đây:
+
   const fetchAccounts = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getAllSocialAccounts();
       const rawAccounts = response.data || [];
-      console.log("Danh sách tài khoản thô:", rawAccounts);
       
-      // Bổ sung thông tin chi tiết (Làm giàu dữ liệu giống trang Accounts)
       const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
         if (acc.platform === 'youtube') {
-          // Nếu đã có đủ thông tin cơ bản thì ưu tiên dùng luôn, tránh gọi API làm giàu nếu không cần thiết
+          // Thông tin cơ bản ban đầu
           const fallbackAcc = {
             ...acc,
             name: acc.name || acc.username || acc.social_id || 'Kênh YouTube',
-            avatar: acc.avatar_url || acc.avatar || 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png',
+            // Ưu tiên thumbnail_url từ backend nếu có (đây là cái em cần)
+            avatar: acc.avatar_url || acc.thumbnail_url || acc.avatar || 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png',
             sub: acc.subscribers || acc.sub || 0,
-            subscriber_count: acc.subscribers || acc.subscriber_count || acc.sub || 0,
+            subscriber_count: acc.subscribers || acc.subscriber_count || 0,
             video_count: acc.video_count || 0,
             view_count: acc.view_count || 0,
             type: 'Channel'
           };
 
-          // Nếu đã có đủ name và avatar thì có thể coi là đã đủ thông tin cơ bản
-          // Tuy nhiên vẫn thử làm giàu để lấy số sub/view mới nhất nếu được
           try {
-            // Kiểm tra acc.id trước khi gọi
             if (!acc.id) return fallbackAcc;
-
-            // Sử dụng ID từ database (integer) để tránh lỗi 422
+            // Gọi API lấy chi tiết kênh để đảm bảo Avatar mới nhất
             const channelsRes = await getYouTubeChannels(acc.id);
             if (channelsRes.data && channelsRes.data.length > 0) {
               const channel = channelsRes.data[0];
               return {
                 ...acc,
                 name: channel.title || fallbackAcc.name,
-                avatar: channel.thumbnail || channel.avatar || fallbackAcc.avatar,
-                sub: channel.subscriber_count || 0,
+                // Lấy thumbnail_url chuẩn từ API (Quan trọng)
+                avatar: channel.thumbnail_url || channel.thumbnail || fallbackAcc.avatar,
                 subscriber_count: channel.subscriber_count || 0,
                 video_count: channel.video_count || 0,
                 view_count: channel.view_count || 0,
@@ -335,27 +349,21 @@ const ChannelContent = () => {
                 social_channel_id: channel.channel_id
               };
             }
-          } catch (e) {
-            console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
-            // Trả về dữ liệu hiện có nếu API làm giàu lỗi
+          } catch {
             return fallbackAcc;
           }
           return fallbackAcc;
         }
-        // Chuẩn hóa dữ liệu cho đồng bộ với giao diện cũ
+        
+        // Xử lý cho Facebook (Giữ nguyên)
         return {
           ...acc,
-          name: acc.name || acc.username || acc.title || acc.social_id,
-          avatar: acc.avatar_url || acc.avatar || acc.picture || acc.profile_image_url || acc.thumbnail || acc.channel_thumbnail,
-          sub: acc.subscribers || acc.sub || 0,
-          subscriber_count: acc.subscribers || acc.subscriber_count || acc.sub || 0,
-          video_count: acc.video_count || 0,
-          view_count: acc.view_count || 0,
-          type: acc.platform === 'youtube' ? 'Channel' : 'Page'
+          name: acc.name || acc.username || 'Page Facebook',
+          avatar: acc.avatar_url || acc.avatar,
+          type: 'Page'
         };
       }));
 
-      console.log("Danh sách tài khoản đã làm giàu:", enrichedAccounts);
       setAccounts(enrichedAccounts);
     } catch (error) {
       console.error("Lỗi tải danh sách tài khoản:", error);

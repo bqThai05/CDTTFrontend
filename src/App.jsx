@@ -7,7 +7,7 @@ import { AnimatePresence } from 'framer-motion';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import CreatePost from './pages/CreatePost';
+import CreatePost from './pages/CreatePost/index';
 import PostHistory from './pages/PostHistory';
 import Accounts from './pages/Accounts';
 import ChannelContent from './pages/ChannelContent';

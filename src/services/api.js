@@ -3,7 +3,30 @@ import axios from 'axios';
 
 // Backend server URL
 export const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/v1` : 'https://api-socialpro-753322230318.asia-southeast1.run.app/api/v1'; 
-// export const BASE_URL = 'http://localhost:8000/api/v1'; 
+//export const BASE_URL = 'http://localhost:8000/api/v1'; 
+export const uploadMedia = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+
+export const createYouTubePost = (data) => {
+    // Chuyển sang FormData để gửi kèm ảnh (nếu có)
+    const formData = new FormData();
+    formData.append('social_account_id', data.social_account_id);
+    formData.append('content', data.content);
+    
+    if (data.image_file) {
+        formData.append('image_file', data.image_file);
+    }
+
+    return api.post('/youtube/post', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+};
+
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -49,6 +72,30 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ... Code cũ giữ nguyên
+
+// Xóa tài khoản liên kết
+export const deleteSocialAccount = (id) => {
+    return api.delete(`/youtube/accounts/${id}`); 
+};
+export const getPostHistory = (params) => {
+    return api.get('/posts/history', { params }); 
+};
+
+export const retryPost = (postId) => {
+    return api.post(`/posts/${postId}/retry`);
+};
+export const getRealYoutubeVideos = () => {
+    return api.get('/youtube/videos');
+};
+
+export const getCalendarPosts = (params) => {
+    return api.get('/posts/calendar', { params });
+};
+export const getVideosByAccountId = (socialAccountId) => {
+    return api.get(`/youtube/${socialAccountId}/videos`);
+};
 
 // ============================================================
 // 1. AUTH API (ĐĂNG NHẬP / ĐĂNG KÝ)
@@ -160,7 +207,27 @@ const deleteYouTubePlaylistItem = (playlistId, itemId) => api.delete(`/youtube/p
 const getFacebookPages = (socialAccountId) => api.get(`/facebook/pages/${socialAccountId}`);
 const getFacebookPagePosts = (pageId) => api.get(`/facebook/pages/${pageId}/posts`);
 const getFacebookPageAnalytics = (pageId, params) => api.get(`/facebook/pages/${pageId}/analytics`, { params });
+export const postToYouTube = (data) => {
+    // data bao gồm: title, description, tags, category_id, privacy_status, video_file, thumbnail_file, social_account_id
+    const formData = new FormData();
+    Object.keys(data).forEach(key => {
+        if (data[key] !== null && data[key] !== undefined) {
+             // Nếu là mảng (ví dụ tags), append từng cái hoặc join lại
+             if (Array.isArray(data[key]) && key === 'tags') {
+                 formData.append(key, data[key].join(','));
+             } else {
+                 formData.append(key, data[key]);
+             }
+        }
+    });
+    return api.post('/youtube/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+};
+export const postToFacebook = (data) => api.post(`/facebook/pages/${data.page_id}/posts`, data);
 
+// Đăng hàng loạt (Gọi API schedule cũ nhưng với tham số publish now)
+export const postBulk = (workspaceId, data) => api.post(`/workspaces/${workspaceId}/publish-now`, data);
 
 // ============================================================
 // EXPORT TẤT CẢ

@@ -9,8 +9,6 @@ import { BASE_URL } from '../services/api';
 
 const { Title, Text } = Typography;
 
-const API_URL = BASE_URL;
-
 const Login = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -18,13 +16,13 @@ const Login = () => {
 
   const onFinish = async (values) => {
     setLoading(true);
-    setErrorMsg('');
+    setErrorMsg(''); // Xóa lỗi cũ
     try {
       const params = new URLSearchParams();
       params.append('username', values.email);
       params.append('password', values.password);
 
-      const response = await axios.post(`${API_URL}/auth/login`, params, {
+      const response = await axios.post(`${BASE_URL}/auth/login`, params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
 
@@ -35,24 +33,39 @@ const Login = () => {
           avatar: '' 
       }));
 
-      message.success('Đăng nhập thành công! Chúc mừng năm mới!');
+      message.success('Đăng nhập thành công!');
       navigate('/dashboard');
 
     } catch (error) {
       console.error("Login Error:", error);
+      
+      // Xử lý thông báo lỗi (Chỉ hiện chữ, không icon rác)
       if (error.response) {
-        setErrorMsg(error.response.data.detail || 'Tài khoản hoặc mật khẩu không đúng.');
+        const status = error.response.status;
+        const detail = error.response.data.detail;
+
+        if (status === 400 || status === 401) {
+            if (detail === "Incorrect email or password") {
+                setErrorMsg("Email hoặc mật khẩu không chính xác.");
+            } else if (detail === "Inactive user") {
+                setErrorMsg("Tài khoản này đã bị khóa hoặc chưa kích hoạt.");
+            } else {
+                setErrorMsg(`Lỗi đăng nhập: ${detail}`);
+            }
+        } else if (status === 404) {
+            setErrorMsg("Tài khoản này không tồn tại trong hệ thống.");
+        } else if (status === 429) {
+            setErrorMsg("Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau.");
+        } else if (status >= 500) {
+            setErrorMsg("Lỗi máy chủ (Server Error). Vui lòng liên hệ Admin.");
+        } else {
+            setErrorMsg("Đã xảy ra lỗi không xác định.");
+        }
+      } else if (error.request) {
+        setErrorMsg("Không thể kết nối đến máy chủ. Vui lòng kiểm tra đường truyền mạng.");
       } else {
-        setErrorMsg('Không thể kết nối đến Server (Hãy chắc chắn bạn đã chạy Backend).');
+        setErrorMsg("Lỗi ứng dụng.");
       }
-        message.warning('⚠️ Server không phản hồi, đang vào chế độ Demo Giao diện!');
-      
-      // Tự tạo token giả để lừa cái ProtectedRoute
-      //localStorage.setItem('access_token', 'token_gia_demo_thoi_nha');
-      //localStorage.setItem('user_info', JSON.stringify({ name: 'Khách Demo', avatar: '' }));
-      
-      // Chuyển hướng luôn
-      setTimeout(() => navigate('/dashboard'), 1000);
     } finally {
       setLoading(false);
     }
@@ -87,7 +100,7 @@ const Login = () => {
       {/* 2. CỘT PHẢI: FORM LOGIN */}
       <div style={{ flex: '0 0 500px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
         
-        {/* --- LỒNG ĐÈN SVG --- */}
+        {/* Lồng đèn SVG */}
         <div style={{ position: 'absolute', top: 0, right: 40, animation: 'swing 3s infinite ease-in-out', transformOrigin: 'top center' }}>
             <svg width="80" height="140" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <line x1="50" y1="0" x2="50" y2="40" stroke="#d4145a" strokeWidth="3"/>
@@ -102,40 +115,41 @@ const Login = () => {
 
         <div style={{ width: '100%', maxWidth: 400, padding: 25 }}>
             <div style={{ textAlign: 'center', marginBottom: 30 }}>
-                <RocketFilled 
-                    style={{ 
-                        fontSize: '50px',
-                        color: '#d4145a',
-                        marginBottom: 15
-                    }} 
-                />
-                <Title level={2} className="text-gradient-tet" style={{margin: 0}}>Đăng Nhập Khai Xuân</Title>
-                <Text type="secondary">Social Pro</Text>
+                <RocketFilled style={{ fontSize: '50px', color: '#d4145a', marginBottom: 15 }} />
+                <Title level={2} className="text-gradient-tet" style={{margin: 0}}>Đăng Nhập</Title>
+                <Text type="secondary">Chào mừng bạn quay trở lại!</Text>
             </div>
 
-            {errorMsg && <Alert message={errorMsg} type="error" showIcon style={{ marginBottom: 20 }} />}
+            {/* Alert của Ant Design tự có icon X hoặc ! đẹp rồi */}
+            {errorMsg && (
+                <Alert 
+                    message={errorMsg} 
+                    type="error" 
+                    showIcon 
+                    closable 
+                    onClose={() => setErrorMsg('')}
+                    style={{ marginBottom: 20, borderRadius: 8 }} 
+                />
+            )}
 
             <Form name="login" onFinish={onFinish} layout="vertical" size="large">
                 <Form.Item name="email" rules={[{ required: true, message: 'Vui lòng nhập Email!' }]}>
-                    <Input prefix={<UserOutlined style={{ color: '#d4145a' }} />} placeholder="Email / Tên đăng nhập" style={{ borderRadius: 8 }} />
+                    <Input prefix={<UserOutlined style={{ color: '#d4145a' }} />} placeholder="Email đăng nhập" style={{ borderRadius: 8 }} />
                 </Form.Item>
 
                 <Form.Item name="password" rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}>
                     <Input.Password prefix={<LockOutlined style={{ color: '#d4145a' }} />} placeholder="Mật khẩu" style={{ borderRadius: 8 }} />
                 </Form.Item>
 
-                {/* --- ĐOẠN ĐÃ SỬA --- */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                     <Form.Item name="remember" valuePropName="checked" noStyle>
                         <Checkbox>Ghi nhớ tôi</Checkbox>
                     </Form.Item>
                     
-                    {/* Bỏ thẻ div bao quanh, để button nằm trực tiếp trong flex container */}
                     <Button type="link" onClick={() => navigate('/forgot-password')} style={{ color: '#d4145a', padding: 0 }}>
                         Quên mật khẩu?
                     </Button>
                 </div>
-                {/* --- HẾT ĐOẠN SỬA --- */}
 
                 <Form.Item>
                     <Button 
@@ -155,7 +169,7 @@ const Login = () => {
                 </Form.Item>
             </Form>
 
-            <Divider style={{ color: '#999', fontSize: 12 }}>Hoặc</Divider>
+            <Divider style={{ color: '#999', fontSize: 12 }}>Hoặc đăng nhập bằng</Divider>
             
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 20 }}>
                 <Button shape="circle" icon={<GoogleOutlined />} size="large" />
@@ -163,7 +177,7 @@ const Login = () => {
             </div>
 
             <div style={{ textAlign: 'center' }}>
-                Chưa có tài khoản? <Link to="/register" style={{ color: '#d4145a', fontWeight: 'bold' }}>Đăng ký nhận lì xì</Link>
+                Chưa có tài khoản? <Link to="/register" style={{ color: '#d4145a', fontWeight: 'bold' }}>Đăng ký ngay</Link>
             </div>
         </div>
       </div>
@@ -182,7 +196,6 @@ const Login = () => {
     </div>
     </PageTransition>
   );
-  
 };
 
 export default Login;
