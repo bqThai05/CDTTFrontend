@@ -8,6 +8,8 @@ import {
   SendOutlined,
   GlobalOutlined,
   LikeOutlined,
+  DislikeOutlined,
+  RobotOutlined,
   CommentOutlined,
   ShareAltOutlined,
   CheckCircleFilled,
