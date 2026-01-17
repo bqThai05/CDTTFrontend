@@ -300,27 +300,39 @@ const ChannelContent = () => {
       // Bổ sung thông tin chi tiết (Làm giàu dữ liệu giống trang Accounts)
       const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
         if (acc.platform === 'youtube') {
+          const fallbackAcc = {
+            ...acc,
+            name: acc.name || acc.username || acc.social_id || 'Kênh YouTube',
+            avatar: acc.avatar_url || acc.avatar || 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png',
+            sub: acc.subscribers || acc.sub || 0,
+            subscriber_count: acc.subscribers || acc.subscriber_count || acc.sub || 0,
+            video_count: acc.video_count || 0,
+            view_count: acc.view_count || 0,
+            type: 'Channel'
+          };
+
           try {
             const channelsRes = await getYouTubeChannels(acc.id);
-            console.log(`Channels cho account ${acc.id}:`, channelsRes.data);
             if (channelsRes.data && channelsRes.data.length > 0) {
               const channel = channelsRes.data[0];
               return {
                 ...acc,
-                name: channel.title || acc.name || acc.username,
-                avatar: channel.thumbnail || channel.avatar || acc.avatar_url || acc.avatar || acc.picture,
+                name: channel.title || fallbackAcc.name,
+                avatar: channel.thumbnail || channel.avatar || fallbackAcc.avatar,
                 sub: channel.subscriber_count || 0,
                 subscriber_count: channel.subscriber_count || 0,
                 video_count: channel.video_count || 0,
                 view_count: channel.view_count || 0,
                 type: 'Channel',
-                channel_db_id: channel.id, // Lưu lại ID của channel trong database
-                social_channel_id: channel.channel_id // ID của YouTube (UC...)
+                channel_db_id: channel.id,
+                social_channel_id: channel.channel_id
               };
             }
           } catch (e) {
-            console.warn("Lỗi lấy chi tiết kênh:", e);
+            console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
+            return fallbackAcc;
           }
+          return fallbackAcc;
         }
         // Chuẩn hóa dữ liệu cho đồng bộ với giao diện cũ
         return {

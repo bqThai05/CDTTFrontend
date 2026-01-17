@@ -27,20 +27,32 @@ const WorkspaceSocialAccounts = ({ workspaceId }) => {
       
       // Làm giàu dữ liệu cho tài khoản YouTube
       const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
-        if (acc.platform === 'youtube' && (!acc.name || !acc.avatar_url)) {
-          try {
-            const channelsRes = await getYouTubeChannels(acc.id);
-            if (channelsRes.data && channelsRes.data.length > 0) {
-              const channel = channelsRes.data[0];
-              return {
-                ...acc,
-                name: channel.title || acc.name || acc.username,
-                avatar_url: channel.thumbnail || acc.avatar_url || acc.avatar
-              };
+        if (acc.platform === 'youtube') {
+          // Luôn gán fallback trước để tránh hiển thị trống khi API lỗi
+          const fallbackAcc = {
+            ...acc,
+            name: acc.name || acc.username || acc.social_id || 'Kênh YouTube',
+            avatar_url: acc.avatar_url || acc.avatar || 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png'
+          };
+
+          if (!acc.name || !acc.avatar_url) {
+            try {
+              const channelsRes = await getYouTubeChannels(acc.id);
+              if (channelsRes.data && channelsRes.data.length > 0) {
+                const channel = channelsRes.data[0];
+                return {
+                  ...acc,
+                  name: channel.title || fallbackAcc.name,
+                  avatar_url: channel.thumbnail || fallbackAcc.avatar_url
+                };
+              }
+            } catch (e) {
+              // Chỉ log cảnh báo, không làm gián đoạn luồng xử lý
+              console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
+              return fallbackAcc;
             }
-          } catch (e) {
-            console.warn("Lỗi lấy chi tiết kênh YouTube:", e);
           }
+          return fallbackAcc;
         }
         return acc;
       }));
@@ -65,20 +77,30 @@ const WorkspaceSocialAccounts = ({ workspaceId }) => {
       
       // Làm giàu dữ liệu cho tài khoản YouTube
       const enrichedAccounts = await Promise.all(filtered.map(async (acc) => {
-        if (acc.platform === 'youtube' && (!acc.name || !acc.avatar_url)) {
-          try {
-            const channelsRes = await getYouTubeChannels(acc.id);
-            if (channelsRes.data && channelsRes.data.length > 0) {
-              const channel = channelsRes.data[0];
-              return {
-                ...acc,
-                name: channel.title || acc.name || acc.username,
-                avatar_url: channel.thumbnail || acc.avatar_url || acc.avatar
-              };
+        if (acc.platform === 'youtube') {
+          const fallbackAcc = {
+            ...acc,
+            name: acc.name || acc.username || acc.social_id || 'Kênh YouTube',
+            avatar_url: acc.avatar_url || acc.avatar || 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png'
+          };
+
+          if (!acc.name || !acc.avatar_url) {
+            try {
+              const channelsRes = await getYouTubeChannels(acc.id);
+              if (channelsRes.data && channelsRes.data.length > 0) {
+                const channel = channelsRes.data[0];
+                return {
+                  ...acc,
+                  name: channel.title || fallbackAcc.name,
+                  avatar_url: channel.thumbnail || fallbackAcc.avatar_url
+                };
+              }
+            } catch (e) {
+              console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
+              return fallbackAcc;
             }
-          } catch (e) {
-            console.warn("Lỗi lấy chi tiết kênh YouTube:", e);
           }
+          return fallbackAcc;
         }
         return acc;
       }));

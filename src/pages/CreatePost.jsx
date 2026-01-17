@@ -58,20 +58,29 @@ const CreatePost = () => {
         // Enrich account data
         const enrichedAccounts = await Promise.all(rawAccounts.map(async (acc) => {
           if (acc.platform === 'youtube') {
+            const fallbackAcc = {
+              ...acc,
+              name: acc.name || acc.username || acc.title || acc.social_id || 'Kênh YouTube',
+              avatar: acc.avatar_url || acc.avatar || acc.picture || acc.profile_image_url || acc.thumbnail || 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png',
+              type: 'Channel'
+            };
+
             try {
               const channelsRes = await getYouTubeChannels(acc.id);
               if (channelsRes.data && channelsRes.data.length > 0) {
                 const channel = channelsRes.data[0];
                 return {
                   ...acc,
-                  name: channel.title || acc.name || acc.username,
-                  avatar: channel.thumbnail || channel.avatar || acc.avatar_url || acc.avatar || acc.picture,
+                  name: channel.title || fallbackAcc.name,
+                  avatar: channel.thumbnail || channel.avatar || fallbackAcc.avatar,
                   type: 'Channel'
                 };
               }
             } catch (e) {
-              console.warn("Lỗi lấy chi tiết kênh YouTube:", e);
+              console.warn(`Không thể làm giàu dữ liệu cho kênh ${acc.social_id}:`, e.message);
+              return fallbackAcc;
             }
+            return fallbackAcc;
           }
           return {
             ...acc,
