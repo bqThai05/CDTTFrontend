@@ -35,6 +35,10 @@ const api = axios.create({
   },
 });
 
+export const getUserProfile = () => {
+    return api.get('/users/me');
+};
+
 // ============================================================
 // CONFIG AXIOS INTERCEPTORS
 // ============================================================

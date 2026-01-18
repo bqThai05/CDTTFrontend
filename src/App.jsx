@@ -3,6 +3,10 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
+// 1. Import ConfigProvider của Antd và Hook settings
+import { ConfigProvider, theme } from 'antd'; 
+import { useSettings } from './contexts/SettingsContext';
+
 // Import các trang
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -20,29 +24,27 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import FacebookIntegration from './pages/FacebookIntegration';
+import Settings from './pages/Settings'; // Đã có trang Settings
 
 // Import Layout
 import MainLayout from './components/MainLayout';
 
-// Component bảo vệ
+// Component bảo vệ (Giữ nguyên)
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();
   const token = localStorage.getItem('access_token');
   const urlParams = new URLSearchParams(location.search);
   const urlToken = urlParams.get('token');
 
-  // Nếu không có token trong localStorage nhưng có trong URL, cho phép đi tiếp 
-  // (AnimatedRoutes sẽ lo việc lưu token vào localStorage)
   if (!token && !urlToken) return <Navigate to="/login" replace />;
   
   return children;
 };
 
-// --- TÁCH RIÊNG PHẦN ROUTES ĐỂ DÙNG ĐƯỢC useLocation ---
+// --- TÁCH RIÊNG PHẦN ROUTES ---
 const AnimatedRoutes = () => {
   const location = useLocation();
 
-  // Kiểm tra và lưu token nếu nó xuất hiện trong URL query (ví dụ sau khi OAuth redirect)
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
@@ -77,7 +79,6 @@ const AnimatedRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create-post" element={<CreatePost />} />
           <Route path="/accounts" element={<Accounts />} />
-          {/* Thêm route phụ để khớp với redirect từ backend */}
           <Route path="/social-accounts" element={<Accounts />} />
           <Route path="/feed" element={<PostHistory />} />
           <Route path="/content" element={<ChannelContent />} />
@@ -85,6 +86,9 @@ const AnimatedRoutes = () => {
           <Route path="/facebook-integration" element={<FacebookIntegration />} />
           <Route path="/workspaces" element={<Workspaces />} />
           <Route path="/workspaces/:workspaceId" element={<WorkspaceDetail />} />
+          
+          {/* Route cho trang Cài đặt */}
+          <Route path="/settings" element={<Settings />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -95,10 +99,25 @@ const AnimatedRoutes = () => {
 };
 
 function App() {
+  // 2. Lấy settings từ Context
+  const { settings } = useSettings();
+
   return (
-    <BrowserRouter>
-      <AnimatedRoutes />
-    </BrowserRouter>
+    // 3. Cấu hình Theme động dựa trên settings.theme
+    <ConfigProvider
+      theme={{
+        // Nếu settings.theme là 'dark' thì dùng thuật toán tối, ngược lại dùng mặc định
+        algorithm: settings.theme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#1890ff', // Màu chủ đạo vẫn giữ xanh
+          borderRadius: 8,
+        },
+      }}
+    >
+      <BrowserRouter>
+        <AnimatedRoutes />
+      </BrowserRouter>
+    </ConfigProvider>
   );
 }
 

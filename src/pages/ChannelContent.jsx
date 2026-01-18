@@ -138,8 +138,10 @@ const ChannelContent = () => {
   const [loadingPlaylistItems, setLoadingPlaylistItems] = useState(false);
   const [activePlaylist, setActivePlaylist] = useState(null);
 
-  // Tìm dòng: const fetchYouTubeVideos = useCallback(async (dbId, socialId) => {
-  // Thay thế toàn bộ nội dung hàm đó bằng code dưới đây:
+  // Trạng thái cho Chọn nhiều (Bulk Selection)
+  const [selectedVideoKeys, setSelectedVideoKeys] = useState([]);
+  const [isBulkPlaylistModalOpen, setIsBulkPlaylistModalOpen] = useState(false);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   const fetchYouTubeVideos = useCallback(async (dbId, socialId) => {
     setLoadingVideos(true);
@@ -427,6 +429,85 @@ const ChannelContent = () => {
     } catch (error) {
       console.error("Lỗi xóa video:", error);
       message.error('Lỗi khi xóa video. Vui lòng thử lại.');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedVideoKeys.length === 0) return;
+
+    Modal.confirm({
+      title: `Xác nhận xóa ${selectedVideoKeys.length} video?`,
+      content: 'Hành động này không thể hoàn tác trên YouTube.',
+      okText: 'Xóa tất cả',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        setBulkProcessing(true);
+        try {
+          let successCount = 0;
+          let failCount = 0;
+          
+          // Xóa từng video một (YouTube API không hỗ trợ xóa hàng loạt trong 1 request)
+          for (const videoId of selectedVideoKeys) {
+            try {
+              await deleteYouTubeVideo(videoId);
+              successCount++;
+            } catch (err) {
+              console.error(`Lỗi xóa video ${videoId}:`, err);
+              failCount++;
+            }
+          }
+          
+          if (failCount === 0) {
+            message.success(`Đã xóa ${successCount} video thành công!`);
+          } else {
+            message.warning(`Đã xóa ${successCount} video, thất bại ${failCount} video.`);
+          }
+          
+          setSelectedVideoKeys([]);
+          fetchYouTubeVideos(selectedAccount.channel_db_id, selectedAccount.social_channel_id || selectedAccount.social_id);
+        } catch (error) {
+          console.error("Lỗi hệ thống khi xóa hàng loạt:", error);
+          message.error('Có lỗi xảy ra trong quá trình xử lý hàng loạt.');
+        } finally {
+          setBulkProcessing(false);
+        }
+      }
+    });
+  };
+
+  const handleBulkAddToPlaylist = async (playlistId) => {
+    if (selectedVideoKeys.length === 0 || !playlistId) return;
+
+    setBulkProcessing(true);
+    try {
+      let successCount = 0;
+      for (const videoId of selectedVideoKeys) {
+        try {
+          await addVideoToYouTubePlaylist(playlistId, {
+            social_account_id: selectedAccount.id,
+            video_id: videoId,
+            position: 0
+          });
+          successCount++;
+        } catch (e) {
+          console.error(`Lỗi thêm video ${videoId} vào playlist:`, e);
+        }
+      }
+      
+      message.success(`Đã thêm ${successCount}/${selectedVideoKeys.length} video vào danh sách phát!`);
+      setIsBulkPlaylistModalOpen(false);
+      setSelectedVideoKeys([]);
+      
+      // Refresh playlist data
+      if (selectedAccount) {
+        fetchYouTubePlaylists(selectedAccount.channel_db_id, selectedAccount.social_channel_id || selectedAccount.social_id, selectedAccount.id);
+      }
+    } catch (error) {
+      console.error("Lỗi thêm hàng loạt vào playlist:", error);
+      message.error('Có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
+      setBulkProcessing(false);
     }
   };
 
@@ -841,6 +922,11 @@ const ChannelContent = () => {
         }
     ];
 
+    const rowSelection = {
+        selectedRowKeys: selectedVideoKeys,
+        onChange: (keys) => setSelectedVideoKeys(keys),
+    };
+
     const playlistColumns = [
         {
             title: 'Danh sách phát',
@@ -958,6 +1044,45 @@ const ChannelContent = () => {
                 </div>
             </Card>
 
+            {/* Thanh tác vụ hàng loạt (Bulk Action Bar) */}
+            {selectedVideoKeys.length > 0 && (
+                <Alert
+                    message={
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Đã chọn <b>{selectedVideoKeys.length}</b> video</span>
+                            <Space>
+                                <Button 
+                                    size="small" 
+                                    icon={<PlusOutlined />} 
+                                    onClick={() => setIsBulkPlaylistModalOpen(true)}
+                                >
+                                    Thêm vào danh sách phát
+                                </Button>
+                                <Button 
+                                    size="small" 
+                                    danger 
+                                    icon={<DeleteOutlined />} 
+                                    onClick={handleBulkDelete}
+                                    loading={bulkProcessing}
+                                >
+                                    Xóa hàng loạt
+                                </Button>
+                                <Button 
+                                    size="small" 
+                                    type="text" 
+                                    onClick={() => setSelectedVideoKeys([])}
+                                >
+                                    Hủy
+                                </Button>
+                            </Space>
+                        </div>
+                    }
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 16, borderRadius: 8, border: '1px solid #91d5ff' }}
+                />
+            )}
+
             {/* Bảng dữ liệu với Tabs */}
             <Card variant="borderless" style={{ borderRadius: 12 }} styles={{ body: { padding: 0 } }}>
                 <Tabs 
@@ -969,7 +1094,8 @@ const ChannelContent = () => {
                             label: `Video (${videos.length})`,
                             children: (
                                 <Table 
-                                    rowKey="id" 
+                                    rowKey="real_id" 
+                                    rowSelection={rowSelection}
                                     columns={columns} 
                                     dataSource={videos} 
                                     loading={loadingVideos}
@@ -1421,6 +1547,58 @@ const ChannelContent = () => {
                     )}
                 />
             </Spin>
+        </Modal>
+
+        {/* Modal Thêm HÀNG LOẠT vào Playlist */}
+        <Modal
+            title="Thêm các video đã chọn vào danh sách phát"
+            open={isBulkPlaylistModalOpen}
+            onCancel={() => setIsBulkPlaylistModalOpen(false)}
+            footer={null}
+        >
+            <div style={{ marginBottom: 16 }}>
+                <Text type="secondary">Đã chọn {selectedVideoKeys.length} video. Vui lòng chọn danh sách phát đích:</Text>
+            </div>
+            <List
+                loading={loadingPlaylists}
+                dataSource={playlists}
+                renderItem={item => (
+                    <List.Item
+                        actions={[
+                            <Button 
+                                type="primary" 
+                                size="small" 
+                                icon={<PlusOutlined />}
+                                onClick={() => handleBulkAddToPlaylist(item.id)}
+                                loading={bulkProcessing}
+                            >
+                                Thêm vào đây
+                            </Button>
+                        ]}
+                    >
+                        <List.Item.Meta
+                            avatar={<Avatar shape="square" src={item.thumbnail} />}
+                            title={item.title}
+                            description={`${item.item_count} video • ${item.privacy === 'public' ? 'Công khai' : 'Riêng tư'}`}
+                        />
+                    </List.Item>
+                )}
+                locale={{ emptyText: 'Bạn chưa có danh sách phát nào' }}
+            />
+            {playlists.length === 0 && !loadingPlaylists && (
+                <Button 
+                    type="dashed" 
+                    block 
+                    icon={<PlusOutlined />} 
+                    onClick={() => {
+                        setIsBulkPlaylistModalOpen(false);
+                        setIsCreatePlaylistModalOpen(true);
+                    }}
+                    style={{ marginTop: 16 }}
+                >
+                    Tạo danh sách phát mới
+                </Button>
+            )}
         </Modal>
     </div>
   );

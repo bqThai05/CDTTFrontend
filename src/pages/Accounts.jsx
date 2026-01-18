@@ -206,7 +206,7 @@ const Accounts = () => {
                                     title={isYoutube ? "Subscribers" : "Followers"} 
                                     value={acc.stats.subscribers} 
                                     formatter={(val) => parseInt(val).toLocaleString()} // Format số
-                                    valueStyle={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}
+                                    styles={{ content: { fontSize: 16, fontWeight: 'bold', color: '#333' } }}
                                     prefix={<UsergroupAddOutlined style={{ fontSize: 14 }} />}
                                 />
                             </Col>
@@ -216,7 +216,7 @@ const Accounts = () => {
                                         title="Videos" 
                                         value={acc.stats.videos} 
                                         formatter={(val) => parseInt(val).toLocaleString()}
-                                        valueStyle={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}
+                                        styles={{ content: { fontSize: 16, fontWeight: 'bold', color: '#333' } }}
                                         prefix={<VideoCameraOutlined style={{ fontSize: 14 }} />}
                                     />
                                 ) : (
@@ -224,7 +224,7 @@ const Accounts = () => {
                                         title="Likes" 
                                         value={acc.stats.likes} 
                                         formatter={(val) => parseInt(val).toLocaleString()}
-                                        valueStyle={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}
+                                        styles={{ content: { fontSize: 16, fontWeight: 'bold', color: '#333' } }}
                                         prefix={<LikeOutlined style={{ fontSize: 14 }} />}
                                     />
                                 )}

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Statistic, Avatar, Typography, Button, Spin, Progress, Segmented, Space, Tag, Empty, Tabs 
 } from 'antd';
+import { useTranslation } from '../hooks/useTranslation';
 import { 
   ArrowUpOutlined, 
   YoutubeFilled, 
@@ -104,7 +105,7 @@ const ChannelList = ({ channels, color, icon, totalViews }) => (
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState({
     totalAccounts: 0,
     totalViews: 0,
@@ -258,7 +259,7 @@ const Dashboard = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div>
                     <Title level={2} style={{ margin: 0 }}>
-                        Tổng Quan Hệ Thống
+                       {t('overview')}
                     </Title>
                     <Text type="secondary" style={{ fontSize: 16 }}>Báo cáo hiệu suất tất cả các kênh.</Text>
                 </div>
@@ -273,7 +274,7 @@ const Dashboard = () => {
             <Row gutter={[24, 24]}>
                 <Col xs={24} sm={12} lg={6}>
                     <StatCard 
-                        title="Tổng Lượt Xem" 
+                        title={t('total_views')}
                         value={metrics.totalViews} 
                         icon={<EyeFilled />} 
                         color="#1677ff" 
@@ -282,7 +283,7 @@ const Dashboard = () => {
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
                     <StatCard 
-                        title="Người Theo Dõi" 
+                        title={t('followers')}
                         value={metrics.totalSubs} 
                         icon={<UsergroupAddOutlined />} 
                         color="#722ed1" 
@@ -387,7 +388,7 @@ const Dashboard = () => {
                         />
                         
                         <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f0f0f0', textAlign: 'center' }}>
-                            <Button type="link" onClick={() => navigate('/accounts')}>Xem tất cả {metrics.totalAccounts} tài khoản</Button>
+                            <Button type="link" onClick={() => navigate('/accounts')}>{t('view_all')} {metrics.totalAccounts} tài khoản</Button>
                         </div>
                     </Card>
                 </Col>
