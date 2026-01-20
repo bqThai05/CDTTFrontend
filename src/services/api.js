@@ -106,7 +106,7 @@ export const getVideosByAccountId = (socialAccountId) => {
 // ============================================================
 
 // 🔥 QUAN TRỌNG: Hàm Login chuẩn cho FastAPI (x-www-form-urlencoded)
-const login = (username, password) => {
+export const login = (username, password) => {
   const formData = new URLSearchParams();
   formData.append('username', username); // FastAPI yêu cầu field này tên là 'username' (dù là email)
   formData.append('password', password);
@@ -116,114 +116,122 @@ const login = (username, password) => {
   });
 };
 
-const registerUser = (userData) => api.post('/auth/register', userData);
-const verifyEmail = (verificationData) => api.post('/auth/verify-email', verificationData);
-const forgotPassword = (email) => api.post('/password-reset/forgot-password', { email });
-const resetPassword = (data) => api.post('/password-reset/reset-password', data);
-const changeUserPassword = (data) => api.post('/password-reset/change-password', data);
+export const registerUser = (userData) => api.post('/auth/register', userData);
+export const verifyEmail = (verificationData) => api.post('/auth/verify-email', verificationData);
+export const forgotPassword = (email) => api.post('/password-reset/forgot-password', { email });
+export const resetPassword = (data) => api.post('/password-reset/reset-password', data);
+export const changeUserPassword = (data) => api.post('/password-reset/change-password', data);
 
 // ============================================================
 // 2. USER API
 // ============================================================
-const getCurrentUser = () => api.get('/users/me'); 
-const updateUserProfile = (data) => api.put('/users/me', data); 
+export const getCurrentUser = () => api.get('/users/me'); 
+export const updateUserProfile = (data) => api.put('/users/me', data); 
 
 // ============================================================
 // 3. WORKSPACE API
 // ============================================================
-const getWorkspaces = () => api.get('/workspaces');
-const getWorkspaceDetails = (workspaceId) => api.get(`/workspaces/${workspaceId}`);
-const createWorkspace = (workspaceData) => api.post('/workspaces', workspaceData);
-const updateWorkspace = (workspaceId, data) => api.put(`/workspaces/${workspaceId}`, data);
-const deleteWorkspace = (workspaceId) => api.delete(`/workspaces/${workspaceId}`);
+export const getWorkspaces = () => api.get('/workspaces');
+export const getWorkspaceDetails = (workspaceId) => api.get(`/workspaces/${workspaceId}`);
+export const createWorkspace = (workspaceData) => api.post('/workspaces', workspaceData);
+export const updateWorkspace = (workspaceId, data) => api.put(`/workspaces/${workspaceId}`, data);
+export const deleteWorkspace = (workspaceId) => api.delete(`/workspaces/${workspaceId}`);
 
 // Members & Permissions
-const getWorkspaceMembers = (workspaceId) => api.get(`/workspaces/${workspaceId}/members`);
-const inviteUserToWorkspace = (workspaceId, inviteData) => api.post(`/workspaces/${workspaceId}/invite`, inviteData);
-const updateWorkspaceMemberRole = (workspaceId, memberId, roleData) => api.put(`/workspaces/${workspaceId}/members/${memberId}/role`, roleData);
-const removeWorkspaceMember = (workspaceId, memberId) => api.delete(`/workspaces/${workspaceId}/members/${memberId}`);
-const leaveWorkspace = (workspaceId) => api.post(`/workspaces/${workspaceId}/leave`);
-const transferWorkspaceOwnership = (workspaceId, newOwnerId) => api.post(`/workspaces/${workspaceId}/transfer-ownership/${newOwnerId}`);
-const getUserWorkspacePermissions = (workspaceId, userId) => api.get(`/workspaces/${workspaceId}/permissions/${userId}`);
-const acceptWorkspaceInvitation = (token) => api.post('/workspaces/accept-invite', null, { params: { token } });
+export const getWorkspaceMembers = (workspaceId) => api.get(`/workspaces/${workspaceId}/members`);
+export const inviteUserToWorkspace = (workspaceId, inviteData) => api.post(`/workspaces/${workspaceId}/invite`, inviteData);
+export const updateWorkspaceMemberRole = (workspaceId, memberId, roleData) => api.put(`/workspaces/${workspaceId}/members/${memberId}/role`, roleData);
+export const removeWorkspaceMember = (workspaceId, memberId) => api.delete(`/workspaces/${workspaceId}/members/${memberId}`);
+export const leaveWorkspace = (workspaceId) => api.post(`/workspaces/${workspaceId}/leave`);
+export const transferWorkspaceOwnership = (workspaceId, newOwnerId) => api.post(`/workspaces/${workspaceId}/transfer-ownership/${newOwnerId}`);
+export const getUserWorkspacePermissions = (workspaceId, userId) => api.get(`/workspaces/${workspaceId}/permissions/${userId}`);
+export const acceptWorkspaceInvitation = (token) => api.post('/workspaces/accept-invite', null, { params: { token } });
 
 // Social Accounts in Workspace
-const getWorkspaceSocialAccounts = (workspaceId) => api.get(`/workspaces/${workspaceId}/social-accounts`);
-const linkSocialAccountToWorkspace = (workspaceId, socialAccountId) => api.post(`/workspaces/${workspaceId}/social-accounts`, { social_account_id: socialAccountId });
-const unlinkSocialAccountFromWorkspace = (workspaceId, socialAccountId) => api.delete(`/workspaces/${workspaceId}/social-accounts/${socialAccountId}`);
+export const getWorkspaceSocialAccounts = (workspaceId) => api.get(`/workspaces/${workspaceId}/social-accounts`);
+export const linkSocialAccountToWorkspace = (workspaceId, socialAccountId) => api.post(`/workspaces/${workspaceId}/social-accounts`, { social_account_id: socialAccountId });
+export const unlinkSocialAccountFromWorkspace = (workspaceId, socialAccountId) => api.delete(`/workspaces/${workspaceId}/social-accounts/${socialAccountId}`);
 
 // Inbox & Logs
-const getWorkspaceLogs = (workspaceId) => api.get(`/workspaces/${workspaceId}/logs`);
-const getWorkspaceInboxComments = (workspaceId) => api.get(`/workspaces/${workspaceId}/inbox`);
-const assignCommentToUser = (commentId, assignData) => api.put(`/workspaces/inbox/comments/${commentId}/assign`, assignData);
-const replyToComment = (commentId, replyData) => api.post(`/workspaces/inbox/comments/${commentId}/reply`, replyData);
+export const getWorkspaceLogs = (workspaceId) => api.get(`/workspaces/${workspaceId}/logs`);
+export const getWorkspaceInboxComments = (workspaceId) => api.get(`/workspaces/${workspaceId}/inbox`);
+export const assignCommentToUser = (commentId, assignData) => api.put(`/workspaces/inbox/comments/${commentId}/assign`, assignData);
+export const replyToComment = (commentId, replyData) => api.post(`/workspaces/inbox/comments/${commentId}/reply`, replyData);
 
 // ============================================================
 // 4. POSTS & CONTENT API
 // ============================================================
-const getWorkspacePosts = (workspaceId) => api.get(`/workspaces/${workspaceId}/posts`);
-const createWorkspacePost = (workspaceId, postData) => api.post(`/workspaces/${workspaceId}/posts`, postData);
-const updateWorkspacePost = (workspaceId, postId, postData) => api.put(`/workspaces/${workspaceId}/posts/${postId}`, postData);
-const deleteWorkspacePost = (workspaceId, postId) => api.delete(`/workspaces/${workspaceId}/posts/${postId}`);
-const publishWorkspacePostNow = (workspaceId, postId) => api.post(`/workspaces/${workspaceId}/posts/${postId}/publish-now`);
-const createPostComment = (workspaceId, postId, commentData) => api.post(`/workspaces/${workspaceId}/posts/${postId}/comments`, commentData);
+export const getWorkspacePosts = (workspaceId) => api.get(`/workspaces/${workspaceId}/posts`);
+export const createWorkspacePost = (workspaceId, postData) => api.post(`/workspaces/${workspaceId}/posts`, postData);
+export const updateWorkspacePost = (workspaceId, postId, postData) => api.put(`/workspaces/${workspaceId}/posts/${postId}`, postData);
+export const deleteWorkspacePost = (workspaceId, postId) => api.delete(`/workspaces/${workspaceId}/posts/${postId}`);
+export const publishWorkspacePostNow = (workspaceId, postId) => api.post(`/workspaces/${workspaceId}/posts/${postId}/publish-now`);
+export const createPostComment = (workspaceId, postId, commentData) => api.post(`/workspaces/${workspaceId}/posts/${postId}/comments`, commentData);
 
 // 🔥 Lấy thống kê bài viết (Dùng cho Dashboard)
-const getWorkspaceAnalytics = (workspaceId) => api.get(`/posts/${workspaceId}/analytics`);
+export const getWorkspaceAnalytics = (workspaceId) => api.get(`/posts/${workspaceId}/analytics`);
 
 // ============================================================
 // 5. SOCIAL ACCOUNT API (Tổng hợp & YouTube)
 // ============================================================
 // Lấy danh sách tài khoản MXH
-const getAllSocialAccounts = () => api.get('/social'); 
+export const getAllSocialAccounts = () => api.get('/social'); 
 // Ngắt kết nối MXH
-const disconnectSocialAccount = (id) => api.delete(`/social/${id}`);
+export const disconnectSocialAccount = (id) => api.delete(`/social/${id}`);
 // Lấy kênh Youtube (để tính view/sub)
-const getYouTubeChannels = (socialAccountId) => api.get(`/youtube/channels/${socialAccountId}`, { silent: true });
+export const getYouTubeChannels = (socialAccountId) => api.get(`/youtube/channels/${socialAccountId}`, { silent: true });
 // Lấy video của kênh Youtube
-const getYouTubeChannelVideos = (channelId) => api.get(`/youtube/channels/${channelId}/videos`);
+export const getYouTubeChannelVideos = (channelId) => api.get(`/youtube/channels/${channelId}/videos`);
+export const refreshYouTubeChannelData = (channelId) => api.post(`/youtube/channels/${channelId}/videos/refresh`);
 // Cập nhật video Youtube
-const updateYouTubeVideo = (videoId, data) => api.put(`/youtube/videos/${videoId}`, data);
+export const updateYouTubeVideo = (videoId, data) => api.put(`/youtube/videos/${videoId}`, data);
 // Xóa video Youtube
-const deleteYouTubeVideo = (videoId) => api.delete(`/youtube/videos/${videoId}`);
+export const deleteYouTubeVideo = (videoId) => api.delete(`/youtube/videos/${videoId}`);
 // Lấy bình luận của video Youtube
-const getYouTubeVideoComments = (videoId) => api.get(`/youtube/videos/${videoId}/comments`);
+export const getYouTubeVideoComments = (videoId) => api.get(`/youtube/videos/${videoId}/comments`);
 // Trả lời bình luận Youtube
-const replyToYouTubeComment = (commentId, text) => api.post(`/youtube/comments/${commentId}/reply`, { text });
+export const replyToYouTubeComment = (commentId, text) => api.post(`/youtube/comments/${commentId}/reply`, { text });
+// Bình luận vào video Youtube
+export const commentOnYouTubeVideo = (videoId, text) => api.post(`/youtube/videos/${videoId}/comments`, { text });
 // Lấy danh sách playlist của kênh Youtube
-const getYouTubeChannelPlaylists = (channelId) => api.get(`/youtube/channels/${channelId}/playlists`);
+export const getYouTubeChannelPlaylists = (channelId) => api.get(`/youtube/channels/${channelId}/playlists`);
 // Lấy danh sách video trong playlist
-const getYouTubePlaylistItems = (playlistId) => api.get(`/youtube/playlists/${playlistId}/items`);
+export const getYouTubePlaylistItems = (playlistId) => api.get(`/youtube/playlists/${playlistId}/items`);
 // Tạo danh sách phát mới
-const createYouTubePlaylist = (data) => api.post('/youtube/playlists', data);
+export const createYouTubePlaylist = (data) => api.post('/youtube/playlists', data);
 // Cập nhật danh sách phát
-const updateYouTubePlaylist = (playlistId, data) => api.put(`/youtube/playlists/${playlistId}`, data);
+export const updateYouTubePlaylist = (playlistId, data) => api.put(`/youtube/playlists/${playlistId}`, data);
 // Xóa danh sách phát
-const deleteYouTubePlaylist = (playlistId) => api.delete(`/youtube/playlists/${playlistId}`);
+export const deleteYouTubePlaylist = (playlistId) => api.delete(`/youtube/playlists/${playlistId}`);
 // Thêm video vào danh sách phát
-const addVideoToYouTubePlaylist = (playlistId, data) => api.post(`/youtube/playlists/${playlistId}/items`, data);
+export const addVideoToYouTubePlaylist = (playlistId, data) => api.post(`/youtube/playlists/${playlistId}/items`, data);
 // Xóa video khỏi danh sách phát
-const deleteYouTubePlaylistItem = (playlistId, itemId) => api.delete(`/youtube/playlists/${playlistId}/items/${itemId}`);
+export const deleteYouTubePlaylistItem = (playlistId, itemId) => api.delete(`/youtube/playlists/${playlistId}/items/${itemId}`);
 
 // ============================================================
 // 6. FACEBOOK API
 // ============================================================
-const getFacebookPages = (socialAccountId) => api.get(`/facebook/pages/${socialAccountId}`);
-const getFacebookPagePosts = (pageId) => api.get(`/facebook/pages/${pageId}/posts`);
-const getFacebookPageAnalytics = (pageId, params) => api.get(`/facebook/pages/${pageId}/analytics`, { params });
+export const getFacebookPages = (socialAccountId) => api.get(`/facebook/pages/${socialAccountId}`);
+export const getFacebookPagePosts = (pageId) => api.get(`/facebook/pages/${pageId}/posts`);
+export const getFacebookPageAnalytics = (pageId, params) => api.get(`/facebook/pages/${pageId}/analytics`, { params });
 export const postToYouTube = (data) => {
-    // data bao gồm: title, description, tags, category_id, privacy_status, video_file, thumbnail_file, social_account_id
+    // data bao gồm: title, description, tags, category_id, privacy_status, file, thumbnail_file, social_account_id, is_shorts
     const formData = new FormData();
+    console.log('--- postToYouTube Payload Debug ---');
     Object.keys(data).forEach(key => {
         if (data[key] !== null && data[key] !== undefined) {
-             // Nếu là mảng (ví dụ tags), append từng cái hoặc join lại
-             if (Array.isArray(data[key]) && key === 'tags') {
-                 formData.append(key, data[key].join(','));
+             console.log(`${key}:`, data[key]);
+             // Nếu là mảng (ví dụ tags), append từng cái
+             if (Array.isArray(data[key])) {
+                 data[key].forEach(val => {
+                     formData.append(key, val);
+                 });
              } else {
                  formData.append(key, data[key]);
              }
         }
     });
+    console.log('--- End Payload Debug ---');
     return api.post('/youtube/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     });
@@ -234,79 +242,12 @@ export const postToFacebook = (data) => api.post(`/facebook/pages/${data.page_id
 export const postBulk = (workspaceId, data) => api.post(`/workspaces/${workspaceId}/publish-now`, data);
 
 // ============================================================
+// 7. ANALYTICS API
+// ============================================================
+export const getAnalyticsGrowthChart = () => api.get('/analytics/growth-chart');
+export const syncAnalyticsData = () => api.post('/analytics/sync');
+
+// ============================================================
 // EXPORT TẤT CẢ
 // ============================================================
-export {
-  // Auth
-  login,
-  registerUser,
-  verifyEmail,
-  forgotPassword, 
-  resetPassword,
-  changeUserPassword,
-  
-  // User
-  getCurrentUser,
-  updateUserProfile,
-  
-  // Workspace Core
-  getWorkspaces,
-  getWorkspaceDetails,
-  createWorkspace,
-  updateWorkspace,
-  deleteWorkspace,
-  acceptWorkspaceInvitation,
-  leaveWorkspace,
-  transferWorkspaceOwnership,
-  
-  // Workspace Members & Permissions
-  getWorkspaceMembers,
-  inviteUserToWorkspace,
-  updateWorkspaceMemberRole,
-  removeWorkspaceMember,
-  getUserWorkspacePermissions,
-  getWorkspaceSocialAccounts,
-  linkSocialAccountToWorkspace,
-  unlinkSocialAccountFromWorkspace,
-  
-  // Workspace Logs & Inbox
-  getWorkspaceLogs,
-  getWorkspaceInboxComments,
-  assignCommentToUser,
-  replyToComment,
-  
-  // Posts
-  getWorkspacePosts,
-  createWorkspacePost,
-  updateWorkspacePost,
-  deleteWorkspacePost,
-  publishWorkspacePostNow,
-  createPostComment,
-  getWorkspaceAnalytics,
-  
-  // Social General
-  getAllSocialAccounts,
-  disconnectSocialAccount,
-  
-  // YouTube
-  getYouTubeChannels,
-  getYouTubeChannelVideos,
-  updateYouTubeVideo,
-  deleteYouTubeVideo,
-  getYouTubeVideoComments,
-  replyToYouTubeComment,
-  getYouTubeChannelPlaylists,
-  getYouTubePlaylistItems,
-  createYouTubePlaylist,
-  updateYouTubePlaylist,
-  deleteYouTubePlaylist,
-  addVideoToYouTubePlaylist,
-  deleteYouTubePlaylistItem,
-  
-  // Facebook
-  getFacebookPages,
-  getFacebookPagePosts,
-  getFacebookPageAnalytics
-};
-
 export default api;
