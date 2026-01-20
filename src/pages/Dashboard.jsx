@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, Row, Col, Statistic, Avatar, Typography, Button, Spin, Progress, Segmented, Space, Tag, Empty, Tabs, message 
+  Card, Row, Col, Statistic, Avatar, Typography, Button, Spin, Progress, Segmented, Space, Tag, Empty, Tabs 
 } from 'antd';
 import { useTranslation } from '../hooks/useTranslation';
 import { 
@@ -9,26 +9,17 @@ import {
   YoutubeFilled, 
   FacebookFilled, 
   EyeFilled, 
-  LikeFilled,
-  MessageFilled,
   UsergroupAddOutlined, 
   VideoCameraFilled, 
   FireFilled,
   ThunderboltFilled,
   PlusOutlined,
-  AppstoreOutlined,
-  SyncOutlined
+  AppstoreOutlined
 } from '@ant-design/icons';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 // 🔥 THÊM getYouTubeChannelVideos VÀO IMPORT
-import { 
-  getAllSocialAccounts, 
-  getYouTubeChannels, 
-  getYouTubeChannelVideos,
-  getAnalyticsGrowthChart,
-  syncAnalyticsData
-} from '../services/api';
+import api, { getAllSocialAccounts, getYouTubeChannels, getYouTubeChannelVideos } from '../services/api';
 
 const { Title, Text } = Typography;
 
@@ -115,7 +106,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
-  const [syncing, setSyncing] = useState(false);
   const [metrics, setMetrics] = useState({
     totalAccounts: 0,
     totalViews: 0,
@@ -237,36 +227,18 @@ const Dashboard = () => {
 
   const fetchChartData = async () => {
     try {
-        const res = await getAnalyticsGrowthChart(); 
+        const res = await api.get('/analytics/system-growth'); 
         if (res.data && Array.isArray(res.data)) {
-            // Đảm bảo dữ liệu có format đúng cho Recharts
-            const formattedData = res.data.map(item => ({
-                ...item,
-                name: item.date // Recharts dùng 'name' cho trục X trong cấu hình hiện tại
-            }));
-            setChartData(formattedData);
+            setChartData(res.data);
         } else {
             setChartData([]);
         }
     } catch (error) {
-        console.error("Lỗi tải dữ liệu biểu đồ:", error);
-        setChartData([]);
-    }
-  };
-
-  const handleSyncData = async () => {
-    setSyncing(true);
-    message.loading({ content: 'Đang đồng bộ dữ liệu từ YouTube và Facebook...', key: 'syncing' });
-    try {
-        await syncAnalyticsData();
-        message.success({ content: 'Đồng bộ dữ liệu thành công!', key: 'syncing' });
-        // Tải lại toàn bộ dữ liệu sau khi đồng bộ
-        await Promise.all([fetchOverviewData(), fetchChartData()]);
-    } catch (error) {
-        console.error("Lỗi đồng bộ dữ liệu:", error);
-        message.error({ content: 'Đồng bộ thất bại. Vui lòng thử lại sau.', key: 'syncing' });
-    } finally {
-        setSyncing(false);
+        if (error.response && error.response.status === 404) {
+            setChartData([]);
+        } else {
+            setChartData([]);
+        }
     }
   };
 
@@ -293,14 +265,6 @@ const Dashboard = () => {
                 </div>
             </div>
             <Space>
-                <Button 
-                    size="large" 
-                    icon={<SyncOutlined spin={syncing} />} 
-                    onClick={handleSyncData}
-                    loading={syncing}
-                >
-                    Đồng bộ dữ liệu
-                </Button>
                 <Button size="large" onClick={() => navigate('/accounts')} icon={<UsergroupAddOutlined />}>Quản lý tài khoản</Button>
                 <Button size="large" type="primary" onClick={() => navigate('/create-post')} icon={<PlusOutlined />} style={{background: 'linear-gradient(90deg, #1677ff, #4096ff)'}}>Tạo bài đăng mới</Button>
             </Space>
@@ -356,9 +320,7 @@ const Dashboard = () => {
                             <Segmented 
                                 options={[
                                     { label: 'Lượt xem', value: 'views', icon: <EyeFilled /> },
-                                    { label: 'Lượt thích', value: 'likes', icon: <LikeFilled /> },
-                                    { label: 'Bình luận', value: 'comments', icon: <MessageFilled /> },
-                                    { label: 'Tương tác', value: 'interactions', icon: <ThunderboltFilled /> },
+                                    { label: 'Theo dõi', value: 'subs', icon: <UsergroupAddOutlined /> },
                                 ]}
                                 value={chartMetric}
                                 onChange={setChartMetric}
@@ -371,18 +333,8 @@ const Dashboard = () => {
                                     <AreaChart data={chartData}>
                                         <defs>
                                             <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor={
-                                                    chartMetric === 'views' ? "#1677ff" : 
-                                                    chartMetric === 'likes' ? "#eb2f96" :
-                                                    chartMetric === 'comments' ? "#722ed1" :
-                                                    "#faad14"
-                                                } stopOpacity={0.3}/>
-                                                <stop offset="95%" stopColor={
-                                                    chartMetric === 'views' ? "#1677ff" : 
-                                                    chartMetric === 'likes' ? "#eb2f96" :
-                                                    chartMetric === 'comments' ? "#722ed1" :
-                                                    "#faad14"
-                                                } stopOpacity={0}/>
+                                                <stop offset="5%" stopColor={chartMetric === 'views' ? "#1677ff" : "#722ed1"} stopOpacity={0.3}/>
+                                                <stop offset="95%" stopColor={chartMetric === 'views' ? "#1677ff" : "#722ed1"} stopOpacity={0}/>
                                             </linearGradient>
                                         </defs>
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} />
@@ -394,12 +346,7 @@ const Dashboard = () => {
                                         <Area 
                                             type="monotone" 
                                             dataKey={chartMetric} 
-                                            stroke={
-                                                chartMetric === 'views' ? "#1677ff" : 
-                                                chartMetric === 'likes' ? "#eb2f96" :
-                                                chartMetric === 'comments' ? "#722ed1" :
-                                                "#faad14"
-                                            } 
+                                            stroke={chartMetric === 'views' ? "#1677ff" : "#722ed1"} 
                                             strokeWidth={3}
                                             fillOpacity={1} 
                                             fill="url(#colorMetric)" 

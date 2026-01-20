@@ -22,8 +22,7 @@ import {
   TagsOutlined,
   BarChartOutlined,
   SendOutlined,
-  UserOutlined,
-  SyncOutlined
+  UserOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,12 +31,10 @@ import {
   getAllSocialAccounts, 
   getYouTubeChannels, 
   getYouTubeChannelVideos,
-  refreshYouTubeChannelData,
   updateYouTubeVideo,
   deleteYouTubeVideo,
   getYouTubeVideoComments,
   replyToYouTubeComment,
-  commentOnYouTubeVideo,
   getYouTubeChannelPlaylists,
   getYouTubePlaylistItems,
   createYouTubePlaylist,
@@ -112,13 +109,10 @@ const ChannelContent = () => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [activeVideo, setActiveVideo] = useState(null);
   const [replyText, setReplyText] = useState({}); // Lưu text trả lời cho từng comment
-  const [newVideoComment, setNewVideoComment] = useState(''); // Text bình luận mới cho video
-  const [sendingComment, setSendingComment] = useState(false); // Trạng thái đang gửi bình luận
 
   // Trạng thái cho Playlists
   const [playlists, setPlaylists] = useState([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
 
   // Trạng thái cho Tạo Playlist
@@ -517,32 +511,6 @@ const ChannelContent = () => {
     }
   };
 
-  const handleRefreshAll = async () => {
-    if (!selectedAccount) return;
-    
-    setRefreshing(true);
-    message.loading({ content: 'Đang đồng bộ dữ liệu mới nhất từ YouTube...', key: 'refreshing' });
-    
-    try {
-      // 1. Gọi API Refresh (Videos + Community Posts)
-      const targetId = selectedAccount.channel_db_id || selectedAccount.social_channel_id || selectedAccount.social_id;
-      await refreshYouTubeChannelData(targetId);
-      
-      // 2. Tải lại danh sách video và playlist
-      await Promise.all([
-        fetchYouTubeVideos(selectedAccount.channel_db_id, selectedAccount.social_channel_id || selectedAccount.social_id),
-        fetchYouTubePlaylists(selectedAccount.channel_db_id, selectedAccount.social_channel_id || selectedAccount.social_id, selectedAccount.id)
-      ]);
-      
-      message.success({ content: 'Đã đồng bộ dữ liệu mới nhất thành công!', key: 'refreshing' });
-    } catch (error) {
-      console.error("Lỗi khi làm mới dữ liệu:", error);
-      message.error({ content: 'Không thể đồng bộ dữ liệu. Vui lòng thử lại sau.', key: 'refreshing' });
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   // --- HÀM XỬ LÝ BÌNH LUẬN ---
   const handleOpenComments = async (video) => {
     setActiveVideo(video);
@@ -577,33 +545,6 @@ const ChannelContent = () => {
     } catch (error) {
       console.error("Lỗi trả lời bình luận:", error);
       message.error("Không thể gửi phản hồi. Vui lòng thử lại.");
-    }
-  };
-
-  const handleCommentOnVideo = async () => {
-    if (!newVideoComment || !newVideoComment.trim()) {
-      message.warning("Vui lòng nhập nội dung bình luận");
-      return;
-    }
-
-    if (!activeVideo?.real_id) {
-      message.error("Không xác định được video để bình luận");
-      return;
-    }
-
-    setSendingComment(true);
-    try {
-      await commentOnYouTubeVideo(activeVideo.real_id, newVideoComment);
-      message.success("Đã gửi bình luận thành công!");
-      setNewVideoComment('');
-      // Tải lại danh sách bình luận
-      const res = await getYouTubeVideoComments(activeVideo.real_id);
-      setComments(res.data || []);
-    } catch (error) {
-      console.error("Lỗi gửi bình luận video:", error);
-      message.error("Không thể gửi bình luận. Vui lòng thử lại.");
-    } finally {
-      setSendingComment(false);
     }
   };
 
@@ -896,74 +837,49 @@ const ChannelContent = () => {
                         </div>
                     )}
 
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Space size={0}>
-                            <Tooltip title="Chỉnh sửa chi tiết">
-                                <Button 
-                                    size="small" 
-                                    icon={<EditOutlined />} 
-                                    type="text" 
-                                    onClick={() => handleEdit(record)}
-                                    style={{ color: '#1677ff' }}
-                                />
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <Tooltip title="Chỉnh sửa chi tiết">
+                            <Button 
+                                size="small" 
+                                icon={<EditOutlined />} 
+                                type="text" 
+                                onClick={() => handleEdit(record)}
+                                style={{ color: '#1677ff' }}
+                            />
+                        </Tooltip>
+                        <Tooltip title="Xem trên YouTube">
+                            <Button 
+                                size="small" 
+                                icon={<YoutubeFilled />} 
+                                type="text" 
+                                onClick={() => record.url && window.open(record.url, '_blank')}
+                                style={{ color: '#ff0000' }}
+                            />
+                        </Tooltip>
+                        <Tooltip title="Thêm vào danh sách phát">
+                            <Button 
+                                size="small" 
+                                icon={<PlusOutlined />} 
+                                type="text" 
+                                onClick={() => {
+                                    setVideoToAddToPlaylist(record);
+                                    setIsAddToPlaylistModalOpen(true);
+                                }}
+                                style={{ color: '#52c41a' }}
+                            />
+                        </Tooltip>
+                        <Popconfirm
+                            title="Xóa video này?"
+                            description="Hành động này không thể hoàn tác trên YouTube."
+                            onConfirm={() => handleDelete(record.real_id)}
+                            okText="Xóa"
+                            cancelText="Hủy"
+                            okButtonProps={{ danger: true }}
+                        >
+                            <Tooltip title="Xóa video">
+                                <Button size="small" icon={<DeleteOutlined />} type="text" danger />
                             </Tooltip>
-                            <Tooltip title="Xem trên YouTube">
-                                <Button 
-                                    size="small" 
-                                    icon={<YoutubeFilled />} 
-                                    type="text" 
-                                    onClick={() => record.url && window.open(record.url, '_blank')}
-                                    style={{ color: '#ff0000' }}
-                                />
-                            </Tooltip>
-                            <Tooltip title="Thêm vào danh sách phát">
-                                <Button 
-                                    size="small" 
-                                    icon={<PlusOutlined />} 
-                                    type="text" 
-                                    onClick={() => {
-                                        setVideoToAddToPlaylist(record);
-                                        setIsAddToPlaylistModalOpen(true);
-                                    }}
-                                    style={{ color: '#52c41a' }}
-                                />
-                            </Tooltip>
-                            <Popconfirm
-                                title="Xóa video này?"
-                                description="Hành động này không thể hoàn tác trên YouTube."
-                                onConfirm={() => handleDelete(record.real_id)}
-                                okText="Xóa"
-                                cancelText="Hủy"
-                                okButtonProps={{ danger: true }}
-                            >
-                                <Tooltip title="Xóa video">
-                                    <Button size="small" icon={<DeleteOutlined />} type="text" danger />
-                                </Tooltip>
-                            </Popconfirm>
-                        </Space>
-
-                        <Divider type="vertical" style={{ height: 14 }} />
-
-                        <Space size={16} style={{ color: '#8c8c8c' }}>
-                            <Tooltip title="Lượt xem">
-                                <Space size={4}>
-                                    <EyeOutlined style={{ fontSize: 14 }} />
-                                    <Text type="secondary" style={{ fontSize: 12 }}>{record.views.toLocaleString()}</Text>
-                                </Space>
-                            </Tooltip>
-                            <Tooltip title="Lượt thích">
-                                <Space size={4}>
-                                    <LikeOutlined style={{ fontSize: 14 }} />
-                                    <Text type="secondary" style={{ fontSize: 12 }}>{record.likes.toLocaleString()}</Text>
-                                </Space>
-                            </Tooltip>
-                            <Tooltip title="Bình luận">
-                                <Space size={4} style={{ cursor: 'pointer' }} onClick={() => handleOpenComments(record)}>
-                                    <MessageOutlined style={{ fontSize: 14, color: '#1677ff' }} />
-                                    <Text style={{ fontSize: 12, color: '#1677ff', textDecoration: 'underline' }}>{record.comments.toLocaleString()}</Text>
-                                </Space>
-                            </Tooltip>
-                        </Space>
+                        </Popconfirm>
                     </div>
                 </div>
               </div>
@@ -980,6 +896,29 @@ const ChannelContent = () => {
             title: 'Ngày đăng',
             dataIndex: 'date',
             render: (val) => <div>{val}<br/><span style={{fontSize: 11, color:'#999'}}>Đã xuất bản</span></div>
+        },
+        {
+            title: 'Số liệu',
+            width: 120,
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                        <EyeOutlined style={{ fontSize: 14, color: '#bfbfbf', width: '16px' }} />
+                        <Text style={{ fontSize: 13, color: '#595959' }}>{record.views.toLocaleString()}</Text>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                        <LikeOutlined style={{ fontSize: 14, color: '#bfbfbf', width: '16px' }} />
+                        <Text style={{ fontSize: 13, color: '#595959' }}>{record.likes.toLocaleString()}</Text>
+                    </div>
+                    <div 
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px', cursor: 'pointer' }}
+                        onClick={() => handleOpenComments(record)}
+                    >
+                        <MessageOutlined style={{ fontSize: 14, color: '#bfbfbf', width: '16px' }} />
+                        <Text style={{ fontSize: 13, color: '#1677ff', textDecoration: 'underline' }}>{record.comments.toLocaleString()}</Text>
+                    </div>
+                </div>
+            )
         }
     ];
 
@@ -1070,22 +1009,13 @@ const ChannelContent = () => {
                     <Button icon={<ArrowLeftOutlined />} onClick={() => setSelectedAccount(null)}>Quay lại</Button>
                     <Breadcrumb items={[{ title: 'Danh sách kênh' }, { title: selectedAccount.name }]} />
                 </Space>
-                <Space>
-                    <Button 
-                        icon={<SyncOutlined />} 
-                        onClick={handleRefreshAll}
-                        loading={refreshing || loadingVideos || loadingPlaylists}
-                    >
-                        Làm mới
-                    </Button>
-                    <Button 
-                        type="primary" 
-                        icon={<VideoCameraAddOutlined />}
-                        onClick={() => navigate('/create-post')}
-                    >
-                        Tạo bài mới
-                    </Button>
-                </Space>
+                <Button 
+                    type="primary" 
+                    icon={<VideoCameraAddOutlined />}
+                    onClick={() => navigate('/create-post')}
+                >
+                    Tạo bài mới
+                </Button>
             </div>
 
             {/* Thông tin kênh đang xem */}
@@ -1347,41 +1277,6 @@ const ChannelContent = () => {
             style={{ top: 20 }}
         >
             <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: 8 }}>
-                {/* Phần gửi bình luận mới cho video */}
-                <div style={{ 
-                    marginBottom: 24, 
-                    padding: 16, 
-                    background: '#f0f2f5', 
-                    borderRadius: 8,
-                    border: '1px solid #d9d9d9'
-                }}>
-                    <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Avatar icon={<UserOutlined />} src={selectedAccount?.avatar} />
-                        <Text strong>Bình luận với tư cách {selectedAccount?.name}</Text>
-                    </div>
-                    <Space.Compact style={{ width: '100%' }}>
-                        <TextArea 
-                            placeholder="Viết bình luận công khai cho video này..." 
-                            autoSize={{ minRows: 2, maxRows: 6 }}
-                            value={newVideoComment}
-                            onChange={(e) => setNewVideoComment(e.target.value)}
-                        />
-                        <Button 
-                            type="primary" 
-                            icon={<SendOutlined />} 
-                            loading={sendingComment}
-                            onClick={handleCommentOnVideo}
-                            style={{ height: 'auto' }}
-                        >
-                            Gửi
-                        </Button>
-                    </Space.Compact>
-                </div>
-
-                <Divider orientation="left" style={{ margin: '16px 0' }}>
-                    <Text type="secondary">{comments.length} Bình luận</Text>
-                </Divider>
-
                 <Spin spinning={loadingComments}>
                     <List
                         dataSource={comments}

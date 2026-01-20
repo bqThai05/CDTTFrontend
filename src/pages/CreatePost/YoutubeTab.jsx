@@ -273,19 +273,19 @@ const YoutubeTab = () => {
                 if (fileList.length === 0) return message.error('Chưa chọn video!');
                 
                 const payload = {
-                    social_account_id: Number(values.account_id),
+                    social_account_id: values.account_id,
                     title: values.title,
-                    description: values.description || '',
+                    description: values.description,
                     privacy_status: values.privacy,
-                    category_id: values.category ? Number(values.category) : 22,
-                    tags: Array.isArray(values.tags) ? values.tags : [], 
+                    category_id: values.category,
+                    tags: values.tags, 
                     is_shorts: postType === 'shorts', 
-                    file: fileList[0].originFileObj || fileList[0], 
+                    video_file: fileList[0].originFileObj || fileList[0], 
                     thumbnail_file: thumbList.length > 0 ? (thumbList[0].originFileObj || thumbList[0]) : null
                 };
 
                 await postToYouTube(payload);
-                message.success(`Đăng ${postType === 'shorts' ? 'Shorts' : 'Video'} thành công! Video sẽ xuất hiện trong danh sách sau vài phút khi YouTube xử lý xong.`);
+                message.success(`Đăng ${postType === 'shorts' ? 'Shorts' : 'Video'} thành công!`);
             }
             form.resetFields();
             setFileList([]); setThumbList([]); setPostImgList([]);
