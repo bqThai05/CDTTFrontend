@@ -238,7 +238,7 @@ const Settings = () => {
 
             <Card style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', minHeight: 500 }}>
                 <Tabs 
-                    tabPosition="left"
+                    tabPlacement="left"
                     size="large"
                     items={[
                         {

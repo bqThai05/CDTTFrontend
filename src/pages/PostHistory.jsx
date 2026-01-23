@@ -252,7 +252,7 @@ const History = () => {
                     />
                 </div>
 
-                <Card bordered={false} bodyStyle={{padding: 16}} style={{borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
+                <Card variant="borderless" styles={{ body: { padding: 16 } }} style={{borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
                     <Space wrap>
                         {/* LỌC KÊNH (MỚI) */}
                         <Select 
@@ -286,7 +286,7 @@ const History = () => {
             </div>
 
             {/* NỘI DUNG CHÍNH (SWITCH GIỮA TABLE VÀ CALENDAR) */}
-            <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} bodyStyle={{padding: 0}}>
+            <Card variant="borderless" style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} styles={{ body: { padding: 0 } }}>
                 {viewMode === 'list' ? (
                     <Table 
                         columns={columns} 

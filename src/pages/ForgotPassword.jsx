@@ -15,16 +15,25 @@ const ForgotPassword = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      console.log("Đang gửi email tới:", values.email); // Log kiểm tra
+      console.log("Đang gửi email tới:", values.email); 
       await forgotPassword(values.email);
-      message.success('🚀 Đã gửi email! Hãy kiểm tra hộp thư (cả mục Spam nhé).');
+      message.success('🚀 Đã gửi mã xác nhận! Hãy kiểm tra hộp thư (bao gồm cả thư rác/Spam).');
+      // Chuyển sang trang reset password và truyền email qua state
+      navigate('/reset-password', { state: { email: values.email } });
     } catch (error) {
       console.error("Lỗi chi tiết:", error);
       
       // --- ĐOẠN CODE BẮT LỖI THÔNG MINH HƠN ---
       if (error.response) {
-          // Lỗi từ Server trả về (404, 400, 500...)
-          const serverMsg = error.response.data?.detail || error.response.data?.message;
+          // Lỗi từ Server trả về (404, 422, 400, 500...)
+          const data = error.response.data;
+          let serverMsg = data?.detail || data?.message;
+
+          // Nếu detail là mảng (thường gặp ở lỗi 422 FastAPI)
+          if (Array.isArray(serverMsg)) {
+            serverMsg = serverMsg.map(err => `${err.loc.join('.')}: ${err.msg}`).join(' | ');
+          }
+
           if (error.response.status === 404) {
               // Nếu Server trả 404 kèm message "User not found" -> Tức là email sai
               if (serverMsg === "User not found" || serverMsg?.includes("not found")) {

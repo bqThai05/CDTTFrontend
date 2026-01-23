@@ -48,18 +48,14 @@ const WorkspaceLogs = ({ workspaceId }) => {
   ];
 
   return (
-    <div>
-      {loading ? (
-        <Spin tip="Đang tải nhật ký..." />
-      ) : (
-        <Table
-          columns={columns}
-          dataSource={logs}
-          rowKey="id"
-          pagination={false}
-        />
-      )}
-    </div>
+    <Spin spinning={loading} tip="Đang tải nhật ký...">
+      <Table
+        columns={columns}
+        dataSource={logs}
+        rowKey="id"
+        pagination={false}
+      />
+    </Spin>
   );
 };
 

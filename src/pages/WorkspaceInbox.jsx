@@ -124,42 +124,38 @@ const WorkspaceInbox = ({ workspaceId }) => {
           </div>
           
           <div style={{ flex: 1, overflowY: 'auto' }}>
-              <List
-                  itemLayout="horizontal"
-                  dataSource={comments}
-                  renderItem={item => (
-                      <List.Item 
-                          onClick={() => setSelectedComment(item)}
-                          style={{ 
-                              padding: '12px 16px', 
-                              cursor: 'pointer',
-                              background: selectedComment?.id === item.id ? '#e6f7ff' : (item.status === 'new' ? '#fff' : '#f9f9f9'),
-                              borderLeft: selectedComment?.id === item.id ? '4px solid #1890ff' : '4px solid transparent',
-                              transition: 'all 0.2s'
-                          }}
-                      >
-                          <List.Item.Meta
-                              avatar={
-                                  <Badge count={item.platform === 'youtube' ? <YoutubeFilled style={{color:'red'}}/> : <FacebookFilled style={{color:'#1877f2'}}/>} offset={[0, 30]}>
-                                      <Avatar src={item.avatar || "https://api.dicebear.com/7.x/miniavs/svg?seed=user"} />
-                                  </Badge>
-                              }
-                              title={
-                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                      <Text strong ellipsis style={{maxWidth: 140}}>{item.author_name}</Text>
-                                      <Text type="secondary" style={{ fontSize: 11 }}>{dayjs(item.published_at).format('DD/MM')}</Text>
-                                  </div>
-                              }
-                              description={
-                                  <div>
-                                      <Paragraph ellipsis={{ rows: 1 }} style={{ margin: 0, fontSize: 13, color: '#666' }}>{item.content}</Paragraph>
-                                      {item.status === 'new' && <Tag color="error" style={{zoom: 0.8, marginTop: 4}}>Mới</Tag>}
-                                  </div>
-                              }
-                          />
-                      </List.Item>
-                  )}
-              />
+              {comments.map(item => (
+                  <div 
+                      key={item.id}
+                      onClick={() => setSelectedComment(item)}
+                      style={{ 
+                          padding: '12px 16px', 
+                          cursor: 'pointer',
+                          background: selectedComment?.id === item.id ? '#e6f7ff' : (item.status === 'new' ? '#fff' : '#f9f9f9'),
+                          borderLeft: selectedComment?.id === item.id ? '4px solid #1890ff' : '4px solid transparent',
+                          borderBottom: '1px solid #f0f0f0',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          gap: 12,
+                          alignItems: 'flex-start'
+                      }}
+                  >
+                      <Badge count={item.platform === 'youtube' ? <YoutubeFilled style={{color:'red'}}/> : <FacebookFilled style={{color:'#1877f2'}}/>} offset={[0, 30]}>
+                          <Avatar src={item.avatar || "https://api.dicebear.com/7.x/miniavs/svg?seed=user"} />
+                      </Badge>
+                      
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Text strong ellipsis style={{ maxWidth: 140 }}>{item.author_name}</Text>
+                              <Text type="secondary" style={{ fontSize: 11 }}>{dayjs(item.published_at).format('DD/MM')}</Text>
+                          </div>
+                          <div style={{ marginTop: 4 }}>
+                              <Paragraph ellipsis={{ rows: 1 }} style={{ margin: 0, fontSize: 13, color: '#666' }}>{item.content}</Paragraph>
+                              {item.status === 'new' && <Tag color="error" style={{ zoom: 0.8, marginTop: 4 }}>Mới</Tag>}
+                          </div>
+                      </div>
+                  </div>
+              ))}
           </div>
       </div>
 
@@ -185,7 +181,7 @@ const WorkspaceInbox = ({ workspaceId }) => {
                           <Select 
                               style={{ width: 150 }} 
                               placeholder="Chọn nhân viên" 
-                              bordered={false}
+                              variant="borderless"
                               onChange={handleAssign}
                           >
                               {members.map(m => (

@@ -173,7 +173,7 @@ const Workspaces = () => {
       ) : workspaces.length === 0 ? (
         <Empty 
             image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
-            imageStyle={{ height: 200 }}
+            styles={{ image: { height: 200 } }}
             description={<span style={{ fontSize: 16, color: '#888' }}>Bạn chưa tham gia nhóm nào cả</span>}
         >
             <Button type="primary" onClick={() => setIsCreateModalOpen(true)}>Tạo nhóm ngay</Button>

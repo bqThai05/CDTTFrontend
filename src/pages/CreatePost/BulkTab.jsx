@@ -135,71 +135,70 @@ const BulkTab = () => {
                         </Checkbox>
                     </div>
                 } 
-                bordered={false} 
+                variant="borderless" 
                 style={{marginBottom: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}
             >
-                <List
-                    grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4 }}
-                    dataSource={accounts}
-                    loading={loadingAccounts}
-                    renderItem={item => {
-                        const isSelected = selectedAccounts.includes(item.id);
-                        const isYoutube = item.platform === 'youtube';
-                        
-                        return (
-                            <List.Item>
-                                <div 
-                                    onClick={() => toggleAccount(item.id)}
-                                    style={{ 
-                                        cursor: 'pointer', 
-                                        borderRadius: 12,
-                                        border: isSelected ? '2px solid #1890ff' : '1px solid #f0f0f0',
-                                        backgroundColor: isSelected ? '#e6f7ff' : '#fff',
-                                        padding: 12,
-                                        position: 'relative',
-                                        transition: 'all 0.3s',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 12
-                                    }}
-                                >
-                                    {/* Icon nền tảng góc trên */}
-                                    <div style={{position: 'absolute', top: -8, left: -8, zIndex: 1}}>
-                                        {isYoutube ? 
-                                            <Avatar size={20} style={{backgroundColor:'#fff'}} icon={<YoutubeFilled style={{color:'red', fontSize: 20}}/>} /> : 
-                                            <Avatar size={20} style={{backgroundColor:'#fff'}} icon={<FacebookFilled style={{color:'#1877f2', fontSize: 20}}/>} />
-                                        }
+                <Spin spinning={loadingAccounts}>
+                    <Row gutter={[16, 16]}>
+                        {accounts.map(item => {
+                            const isSelected = selectedAccounts.includes(item.id);
+                            const isYoutube = item.platform === 'youtube';
+                            
+                            return (
+                                <Col xs={24} sm={12} md={8} lg={6} key={item.id}>
+                                    <div 
+                                        onClick={() => toggleAccount(item.id)}
+                                        style={{ 
+                                            cursor: 'pointer', 
+                                            borderRadius: 12,
+                                            border: isSelected ? '2px solid #1890ff' : '1px solid #f0f0f0',
+                                            backgroundColor: isSelected ? '#e6f7ff' : '#fff',
+                                            padding: 12,
+                                            position: 'relative',
+                                            transition: 'all 0.3s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 12
+                                        }}
+                                    >
+                                        {/* Icon nền tảng góc trên */}
+                                        <div style={{position: 'absolute', top: -8, left: -8, zIndex: 1}}>
+                                            {isYoutube ? 
+                                                <Avatar size={20} style={{backgroundColor:'#fff'}} icon={<YoutubeFilled style={{color:'red', fontSize: 20}}/>} /> : 
+                                                <Avatar size={20} style={{backgroundColor:'#fff'}} icon={<FacebookFilled style={{color:'#1877f2', fontSize: 20}}/>} />
+                                            }
+                                        </div>
+
+                                        {/* Icon Check khi chọn */}
+                                        {isSelected && <CheckCircleFilled style={{position:'absolute', top: 10, right: 10, color: '#1890ff', fontSize: 18}} />}
+
+                                        {/* Avatar Kênh */}
+                                        <Avatar 
+                                            src={item.displayAvatar} 
+                                            size={48} 
+                                            icon={<UserOutlined />}
+                                            style={{ border: isSelected ? '1px solid #1890ff' : '1px solid #eee' }}
+                                        />
+
+                                        {/* Thông tin Kênh */}
+                                        <div style={{overflow: 'hidden'}}>
+                                            <Text strong style={{display:'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 14}}>
+                                                {item.displayName}
+                                            </Text>
+                                            <Tag color={isYoutube ? 'red' : 'blue'} style={{margin:0, fontSize: 10, borderRadius: 10}}>
+                                                {isYoutube ? 'YouTube Channel' : 'Facebook Page'}
+                                            </Tag>
+                                        </div>
                                     </div>
-
-                                    {/* Icon Check khi chọn */}
-                                    {isSelected && <CheckCircleFilled style={{position:'absolute', top: 10, right: 10, color: '#1890ff', fontSize: 18}} />}
-
-                                    {/* Avatar Kênh */}
-                                    <Avatar 
-                                        src={item.displayAvatar} 
-                                        size={48} 
-                                        icon={<UserOutlined />}
-                                        style={{ border: isSelected ? '1px solid #1890ff' : '1px solid #eee' }}
-                                    />
-
-                                    {/* Thông tin Kênh */}
-                                    <div style={{overflow: 'hidden'}}>
-                                        <Text strong style={{display:'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 14}}>
-                                            {item.displayName}
-                                        </Text>
-                                        <Tag color={isYoutube ? 'red' : 'blue'} style={{margin:0, fontSize: 10, borderRadius: 10}}>
-                                            {isYoutube ? 'YouTube Channel' : 'Facebook Page'}
-                                        </Tag>
-                                    </div>
-                                </div>
-                            </List.Item>
-                        );
-                    }}
-                />
+                                </Col>
+                            );
+                        })}
+                    </Row>
+                </Spin>
             </Card>
 
             {/* PHẦN 2: NỘI DUNG BÀI ĐĂNG */}
-            <Card title="2. Nội dung bài đăng" bordered={false} style={{borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
+            <Card title="2. Nội dung bài đăng" variant="borderless" style={{borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
                 <Row gutter={24}>
                     <Col xs={24} md={16}>
                         <Form.Item 

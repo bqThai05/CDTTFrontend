@@ -1024,7 +1024,7 @@ const ChannelContent = () => {
                     <Avatar src={selectedAccount.avatar} size={64} style={{ border: '2px solid #ddd' }} />
                     <div>
                         <Title level={4} style={{ margin: 0 }}>{selectedAccount.name}</Title>
-                        <Space split={<Divider type="vertical" />} style={{ marginTop: 4 }}>
+                        <Space separator={<Divider orientation="vertical" />} style={{ marginTop: 4 }}>
                             <Text type="secondary">{selectedAccount.platform === 'youtube' ? 'YouTube' : 'Facebook'}</Text>
                             {selectedAccount.platform === 'youtube' && (
                                 <>

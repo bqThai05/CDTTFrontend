@@ -42,8 +42,7 @@ const Profile = () => {
   });
   
   // State xử lý ảnh
-  const [previewImage, setPreviewImage] = useState(null);
-  const [avatarFile, setAvatarFile] = useState(null);
+  const [previewImage] = useState(null);
 
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
@@ -67,7 +66,8 @@ const Profile = () => {
             profileForm.setFieldsValue({
                 username: userRes.value.data.username,
                 email: userRes.value.data.email,
-                phone_number: userRes.value.data.phone_number
+                phone_number: userRes.value.data.phone_number,
+                avatar: userRes.value.data.avatar || userRes.value.data.avatar_url
             });
         }
 
@@ -98,25 +98,10 @@ const Profile = () => {
     fetchAllData();
   }, [profileForm]); // Thêm profileForm vào dependency
 
-  // 2. Xử lý chọn ảnh
-  const handleAvatarChange = (info) => {
-    const file = info.file.originFileObj || info.file;
-    if (!file) return;
-
-    // Validate
-    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-    if (!isJpgOrPng) return message.error('Chỉ chấp nhận file JPG/PNG!');
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) return message.error('Ảnh phải nhỏ hơn 2MB!');
-
-    // Preview
-    const reader = new FileReader();
-    reader.addEventListener('load', () => setPreviewImage(reader.result));
-    reader.readAsDataURL(file);
-    
-    setAvatarFile(file);
-    message.success('Đã chọn ảnh. Bấm "Lưu" để cập nhật.');
-    setIsEditing(true); // Tự động chuyển sang chế độ sửa để người dùng bấm Lưu
+  // 2. Xử lý chọn ảnh (Tạm thời vô hiệu hóa upload trực tiếp nếu backend chỉ nhận URL)
+  const handleAvatarChange = () => {
+    message.info('Vui lòng nhập URL ảnh vào ô "URL Ảnh đại diện" bên dưới để cập nhật.');
+    setIsEditing(true);
   };
 
   // 3. Xử lý cập nhật thông tin
@@ -126,13 +111,23 @@ const Profile = () => {
       const updateData = {
         username: values.username,
         phone_number: values.phone_number,
+        avatar: values.avatar, // Gửi URL ảnh đại diện
       };
-
-      if (avatarFile) console.log("File ảnh sẵn sàng upload:", avatarFile);
 
       await updateUserProfile(updateData);
       message.success('Cập nhật hồ sơ thành công!');
+      
+      // Cập nhật state local
       setUser(prev => ({ ...prev, ...updateData }));
+      
+      // Cập nhật localStorage để đồng bộ UI (ví dụ Avatar ở Sidebar/Header)
+      const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+      localStorage.setItem('user_info', JSON.stringify({
+          ...userInfo,
+          name: updateData.username,
+          avatar: updateData.avatar
+      }));
+
       setIsEditing(false); // Tắt chế độ sửa sau khi lưu thành công
       
     } catch (error) {
@@ -166,7 +161,8 @@ const Profile = () => {
     }
   };
 
-  const displayAvatar = previewImage || (user?.avatar_url || user?.avatar) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'User'}`;
+  const avatarUrlInForm = Form.useWatch('avatar', profileForm);
+  const displayAvatar = previewImage || avatarUrlInForm || (user?.avatar_url || user?.avatar) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'User'}`;
 
   if (loading) return (
     <div style={{textAlign: 'center', padding: 100}}>
@@ -177,7 +173,7 @@ const Profile = () => {
   // --- GIAO DIỆN XEM (READ-ONLY) ---
   const GeneralInfoView = () => (
       <div style={{ padding: '10px 0' }}>
-          <Descriptions column={1} bordered size="middle" labelStyle={{width: '180px', fontWeight: '600'}}>
+          <Descriptions column={1} bordered size="middle" styles={{ label: { width: '180px', fontWeight: '600' } }}>
               <Descriptions.Item label="Tên hiển thị">
                   <span style={{fontSize: 16}}>{user?.username}</span>
               </Descriptions.Item>
@@ -186,6 +182,15 @@ const Profile = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Số điện thoại">
                   {user?.phone_number || <span style={{color: '#999', fontStyle: 'italic'}}>Chưa cập nhật</span>}
+              </Descriptions.Item>
+              <Descriptions.Item label="URL Avatar">
+                  {user?.avatar || user?.avatar_url ? (
+                      <a href={user?.avatar || user?.avatar_url} target="_blank" rel="noopener noreferrer" style={{wordBreak: 'break-all'}}>
+                          {user?.avatar || user?.avatar_url}
+                      </a>
+                  ) : (
+                      <span style={{color: '#999', fontStyle: 'italic'}}>Chưa cập nhật</span>
+                  )}
               </Descriptions.Item>
               <Descriptions.Item label="Vai trò">
                   <Tag color="purple">Administrator</Tag>
@@ -217,6 +222,11 @@ const Profile = () => {
             <Col span={12}>
                 <Form.Item label="Số điện thoại" name="phone_number">
                     <Input prefix={<PhoneOutlined style={{color:'#1890ff'}}/>} placeholder="Chưa cập nhật" />
+                </Form.Item>
+            </Col>
+            <Col span={24}>
+                <Form.Item label="URL Ảnh đại diện" name="avatar">
+                    <Input prefix={<CameraOutlined style={{color:'#1890ff'}}/>} placeholder="Nhập link URL ảnh (ví dụ: Cloud Storage, Google Drive...)" />
                 </Form.Item>
             </Col>
             <Col span={24}>
@@ -275,7 +285,7 @@ const Profile = () => {
           <div style={{ height: 200, background: 'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)', borderRadius: '16px 16px 0 0', position: 'relative' }}>
           </div>
 
-          <Card bordered={false} style={{ marginTop: -60, marginLeft: 24, marginRight: 24, borderRadius: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+          <Card variant="borderless" style={{ marginTop: -60, marginLeft: 24, marginRight: 24, borderRadius: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
               <Row align="middle" gutter={24}>
                   <Col flex="140px" style={{ position: 'relative' }}>
                       <div style={{ marginTop: -80, padding: 4, background: '#fff', borderRadius: '50%', display: 'inline-block' }}>
