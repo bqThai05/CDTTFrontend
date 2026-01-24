@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, Row, Col, Statistic, Avatar, Typography, Button, Spin, Progress, Segmented, Space, Tag, Empty, Tabs, DatePicker 
+  Card, Row, Col, Statistic, theme, Avatar, Typography, Button, Spin, Progress, Segmented, Space, Tag, Empty, Tabs, DatePicker 
 } from 'antd';
 import { useTranslation } from '../hooks/useTranslation';
 import { 
@@ -13,100 +13,112 @@ import {
   VideoCameraFilled, 
   FireFilled,
   ThunderboltFilled,
-  PlusOutlined,
-  AppstoreOutlined
+  PlusOutlined
 } from '@ant-design/icons';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-// 🔥 THÊM getYouTubeChannelVideos VÀO IMPORT
 import api, { getAllSocialAccounts, getYouTubeChannels, getYouTubeChannelVideos } from '../services/api';
 
 const { Title, Text } = Typography;
 
-// --- 1. COMPONENT CON: STAT CARD ---
-const StatCard = ({ title, value, icon, color, subText }) => (
-  <Card 
-    variant="borderless" 
-    style={{ 
-      borderRadius: 16, 
-      boxShadow: '0 4px 20px rgba(0,0,0,0.04)', 
-      height: '100%',
-      background: '#fff'
-    }}
-  >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-              <Text type="secondary" style={{ fontSize: 14 }}>{title}</Text>
-              <div style={{ fontSize: 28, fontWeight: '800', marginTop: 4, color: '#333' }}>
-                  {value.toLocaleString()}
-              </div>
-          </div>
-          <div style={{ 
-              width: 48, height: 48, borderRadius: 12, 
-              background: `${color}15`, color: color, 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 
-          }}>
-              {icon}
-          </div>
-      </div>
-      <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Tag color={color === '#52c41a' ? 'green' : 'blue'} style={{ borderRadius: 10, border: 'none' }}>
-              <ArrowUpOutlined /> Tăng trưởng
-          </Tag>
-          <Text type="secondary" style={{ fontSize: 12 }}>{subText}</Text>
-      </div>
-  </Card>
-);
+// --- 1. COMPONENT CON: STAT CARD (Đã sửa Dark Mode) ---
+const StatCard = ({ title, value, icon, color, subText }) => {
+  const { token } = theme.useToken(); // Lấy token màu
 
-// --- 2. COMPONENT CON: CHANNEL LIST ---
-const ChannelList = ({ channels, color, icon, totalViews }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        {channels.length === 0 ? (
-            <Empty description="Chưa có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-        ) : (
-            channels.map((channel) => (
-                <div key={channel.id}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ position: 'relative' }}>
-                                <Avatar src={channel.avatar} shape="square" size={40} style={{ borderRadius: 8 }} />
-                                <div style={{ 
-                                    position: 'absolute', bottom: -4, right: -4, 
-                                    background: color,
-                                    color: '#fff', borderRadius: '50%', width: 16, height: 16,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10
-                                }}>
-                                    {icon}
+  return (
+    <Card 
+      variant="borderless" 
+      style={{ 
+        borderRadius: 16, 
+        boxShadow: token.boxShadowTertiary, 
+        height: '100%',
+        background: token.colorBgContainer // Màu nền động (Trắng/Đen)
+      }}
+    >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+                <Text type="secondary" style={{ fontSize: 14 }}>{title}</Text>
+                {/* Màu chữ động */}
+                <div style={{ fontSize: 28, fontWeight: '800', marginTop: 4, color: token.colorTextHeading }}>
+                    {value.toLocaleString()}
+                </div>
+            </div>
+            <div style={{ 
+                width: 48, height: 48, borderRadius: 12, 
+                background: `${color}15`, color: color, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 
+            }}>
+                {icon}
+            </div>
+        </div>
+        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Tag color={color === '#52c41a' ? 'green' : 'blue'} style={{ borderRadius: 10, border: 'none' }}>
+                <ArrowUpOutlined /> Tăng trưởng
+            </Tag>
+            <Text type="secondary" style={{ fontSize: 12 }}>{subText}</Text>
+        </div>
+    </Card>
+  );
+};
+
+// --- 2. COMPONENT CON: CHANNEL LIST (Đã sửa Dark Mode) ---
+const ChannelList = ({ channels, color, icon, totalViews }) => {
+    const { token } = theme.useToken();
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {channels.length === 0 ? (
+                <Empty description="Chưa có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ) : (
+                channels.map((channel) => (
+                    <div key={channel.id}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ position: 'relative' }}>
+                                    <Avatar src={channel.avatar} shape="square" size={40} style={{ borderRadius: 8 }} />
+                                    <div style={{ 
+                                        position: 'absolute', bottom: -4, right: -4, 
+                                        background: color,
+                                        color: '#fff', borderRadius: '50%', width: 16, height: 16,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10
+                                    }}>
+                                        {icon}
+                                    </div>
+                                </div>
+                                <div>
+                                    {/* Sửa màu chữ cho Tên kênh */}
+                                    <Text strong style={{ fontSize: 14, display:'block', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: token.colorText }}>
+                                        {channel.name}
+                                    </Text>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>{parseInt(channel.subs).toLocaleString()} subs</Text>
                                 </div>
                             </div>
-                            <div>
-                                <Text strong style={{ fontSize: 14, display:'block', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{channel.name}</Text>
-                                <Text type="secondary" style={{ fontSize: 12 }}>{parseInt(channel.subs).toLocaleString()} subs</Text>
+                            <div style={{ textAlign: 'right' }}>
+                                <Text strong style={{ color: token.colorText }}>{parseInt(channel.views).toLocaleString()}</Text>
+                                <div style={{ fontSize: 10, color: token.colorTextSecondary }}>VIEWS</div>
                             </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <Text strong>{parseInt(channel.views).toLocaleString()}</Text>
-                            <div style={{ fontSize: 10, color: '#888' }}>VIEWS</div>
-                        </div>
+                        <Progress 
+                            percent={totalViews > 0 ? (channel.views / totalViews) * 100 : 0} 
+                            showInfo={false} 
+                            size="small" 
+                            strokeColor={color} 
+                            trailColor={token.colorFillSecondary} // Màu nền thanh progress bar khi chưa đầy
+                        />
                     </div>
-                    <Progress 
-                        percent={totalViews > 0 ? (channel.views / totalViews) * 100 : 0} 
-                        showInfo={false} 
-                        size="small" 
-                        strokeColor={color} 
-                    />
-                </div>
-            ))
-        )}
-    </div>
-);
+                ))
+            )}
+        </div>
+    );
+};
 
 // --- 3. COMPONENT CHÍNH ---
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const { token } = theme.useToken(); // Lấy token màu từ Antd
   const [metrics, setMetrics] = useState({
     totalAccounts: 0,
     totalViews: 0,
@@ -121,7 +133,7 @@ const Dashboard = () => {
   const [topFacebookChannels, setTopFacebookChannels] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [chartMetric, setChartMetric] = useState('views');
-  const [filterMonth, setFilterMonth] = useState(dayjs()); // Mặc định tháng hiện tại
+  const [filterMonth, setFilterMonth] = useState(dayjs());
 
   const fetchOverviewData = async () => {
     try {
@@ -163,7 +175,6 @@ const Dashboard = () => {
                  const vidsRes = await getYouTubeChannelVideos(acc.id);
                  const vidsList = Array.isArray(vidsRes.data) ? vidsRes.data : (vidsRes.data?.videos || []);
                  
-                 // Thu thập tất cả video để vẽ biểu đồ
                  vidsList.forEach(v => {
                     allVideos.push({
                         ...v,
@@ -182,7 +193,6 @@ const Dashboard = () => {
           if (!avatar) avatar = 'https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg';
         }
 
-        // Cộng dồn vào tổng toàn hệ thống
         tViews += views;
         tSubs += subs;
         tVideos += vids;
@@ -203,7 +213,6 @@ const Dashboard = () => {
         }
       }));
 
-      // Xử lý dữ liệu biểu đồ từ danh sách video nếu chartData từ API đang trống
       if (allVideos.length > 0) {
         const grouped = {};
         const selectedMonth = filterMonth.format('YYYY-MM');
@@ -212,7 +221,6 @@ const Dashboard = () => {
             const videoDate = dayjs(v.published_at || v.created_at);
             const videoMonth = videoDate.format('YYYY-MM');
 
-            // Chỉ lấy video thuộc tháng/năm đã chọn
             if (videoMonth === selectedMonth) {
                 const dateKey = videoDate.format('DD/MM');
                 if (!grouped[dateKey]) {
@@ -228,15 +236,12 @@ const Dashboard = () => {
             return dateA.isAfter(dateB) ? 1 : -1;
         });
 
-        // Set dữ liệu biểu đồ dựa trên lọc
         setChartData(generatedChartData);
       }
 
-      // Sắp xếp
       ytList.sort((a, b) => b.views - a.views);
       fbList.sort((a, b) => b.views - a.views);
 
-      // Tính hiệu suất
       const calculatedAvgViews = tVideos > 0 ? Math.round(tViews / tVideos) : 0;
 
       setMetrics({
@@ -343,7 +348,12 @@ const Dashboard = () => {
                     <Card 
                         title="Phân Tích Tăng Trưởng" 
                         variant="borderless" 
-                        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.04)', height: '100%' }}
+                        style={{ 
+                            borderRadius: 16, 
+                            boxShadow: token.boxShadowTertiary, 
+                            height: '100%',
+                            background: token.colorBgContainer // Sửa nền cho Card
+                        }}
                         extra={
                             <Space>
                                 <DatePicker 
@@ -374,11 +384,21 @@ const Dashboard = () => {
                                                 <stop offset="95%" stopColor={chartMetric === 'views' ? "#1677ff" : "#722ed1"} stopOpacity={0}/>
                                             </linearGradient>
                                         </defs>
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                        <YAxis axisLine={false} tickLine={false} />
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                        {/* Sửa màu Text của trục X/Y để hiện rõ trên nền tối */}
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: token.colorTextSecondary }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: token.colorTextSecondary }} />
+                                        {/* Sửa màu đường kẻ lưới */}
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={token.colorBorderSecondary} />
                                         <Tooltip 
-                                            contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                            contentStyle={{ 
+                                                borderRadius: 8, 
+                                                border: `1px solid ${token.colorBorder}`, 
+                                                boxShadow: token.boxShadowSecondary,
+                                                backgroundColor: token.colorBgElevated, // Nền tooltip
+                                                color: token.colorText // Chữ tooltip
+                                            }}
+                                            itemStyle={{ color: token.colorText }}
+                                            labelStyle={{ color: token.colorTextSecondary }}
                                         />
                                         <Area 
                                             type="monotone" 
@@ -405,7 +425,12 @@ const Dashboard = () => {
                     <Card 
                         title={<div style={{display:'flex', gap: 8, alignItems:'center'}}><FireFilled style={{color:'#ff4d4f'}}/> Top Kênh Hàng Đầu</div>}
                         variant="borderless" 
-                        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.04)', height: '100%' }}
+                        style={{ 
+                            borderRadius: 16, 
+                            boxShadow: token.boxShadowTertiary, 
+                            height: '100%',
+                            background: token.colorBgContainer // Sửa nền cho Card
+                        }}
                         styles={{ body: { paddingTop: 0 } }}
                     >
                         <Tabs 
@@ -424,7 +449,7 @@ const Dashboard = () => {
                             ]}
                         />
                         
-                        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f0f0f0', textAlign: 'center' }}>
+                        <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${token.colorBorderSecondary}`, textAlign: 'center' }}>
                             <Button type="link" onClick={() => navigate('/accounts')}>{t('view_all')} {metrics.totalAccounts} tài khoản</Button>
                         </div>
                     </Card>

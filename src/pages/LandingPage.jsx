@@ -4,20 +4,18 @@ import { Button, Typography, Row, Col, Card, Space, Layout, Tag, Divider, Collap
 import { 
   RocketFilled,           
   CheckCircleFilled,      
-  CloseCircleOutlined,    
   ArrowRightOutlined,
   PlayCircleFilled,
   GlobalOutlined,
   SafetyCertificateFilled,
   ThunderboltFilled,
   SmileOutlined,
-  RobotFilled,            
   PieChartFilled,         
-  CrownFilled,            
   TeamOutlined,
   MailOutlined,           
   PhoneOutlined,          
-  EnvironmentOutlined     
+  EnvironmentOutlined,
+  AppstoreOutlined     
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -103,8 +101,8 @@ const LandingPage = () => {
         <div className="desktop-menu hidden-mobile">
             <Space size={40}>
                 <Button type="link" onClick={() => scrollToSection('features')} style={{color: '#333', fontSize: 16, fontWeight: 500}}>Tính năng</Button>
-                <Button type="link" onClick={() => scrollToSection('pricing')} style={{color: '#333', fontSize: 16, fontWeight: 500}}>Bảng giá</Button>
                 <Button type="link" onClick={() => scrollToSection('partners')} style={{color: '#333', fontSize: 16, fontWeight: 500}}>Khách hàng</Button>
+                <Button type="link" onClick={() => scrollToSection('faq')} style={{color: '#333', fontSize: 16, fontWeight: 500}}>Hỏi đáp</Button>
             </Space>
         </div>
 
@@ -122,24 +120,21 @@ const LandingPage = () => {
         {/* 2. HERO SECTION */}
         <div style={styles.heroSection}>
             <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 2 }}>
-                <Tag color="#fff0f6" style={{ marginBottom: 20, padding: '6px 20px', borderRadius: 20, color: colors.primary, border: `1px solid ${colors.primary}`, fontSize: 14 }}>
-                    🚀 Phiên bản Khai Xuân 2.0
-                </Tag>
                 <Title level={1} style={{ fontSize: 64, marginBottom: 24, lineHeight: 1.1, fontWeight: 800, color: '#2c3e50' }}>
                     Quản lý đa kênh <br/> 
                     <span style={styles.gradientText}>Bứt phá doanh thu.</span>
                 </Title>
                 <Paragraph style={{ fontSize: 20, color: '#666', marginBottom: 40, maxWidth: 700, margin: '0 auto 40px', lineHeight: 1.6 }}>
-                    Tích hợp AI viết content, lên lịch tự động cho Facebook & YouTube. 
-                    Giải pháp toàn diện cho Creator mùa Tết này.
+                    Quản lý tập trung Facebook & YouTube trên một nền tảng. 
+                    Lên lịch đăng bài tự động, báo cáo chi tiết và làm việc nhóm hiệu quả.
                 </Paragraph>
                 <Space size="middle">
                     <Button 
-                        type="primary" size="large" icon={<ArrowRightOutlined />} 
+                        type="primary" size="large"
                         style={{ height: 56, fontSize: 18, padding: '0 40px', borderRadius: 28, background: colors.buttonGradient, border: 'none', boxShadow: '0 10px 30px rgba(212, 20, 90, 0.3)' }}
                         onClick={() => navigate('/register')}
                     >
-                        Dùng thử miễn phí
+                        Dùng thử ngay
                     </Button>
                     <Button 
                         size="large" icon={<PlayCircleFilled style={{color: colors.primary}}/>} 
@@ -151,8 +146,8 @@ const LandingPage = () => {
                 
                 <div style={{ marginTop: 40, fontSize: 14, color: '#888' }}>
                     <Space size="large">
-                        <span><CheckCircleFilled style={{ color: colors.secondary }} /> Free 14 ngày</span>
-                        <span><CheckCircleFilled style={{ color: colors.secondary }} /> Không cần thẻ tín dụng</span>
+                        <span><CheckCircleFilled style={{ color: colors.secondary }} /> Quản lý Video & Shorts</span>
+                        <span><CheckCircleFilled style={{ color: colors.secondary }} /> Hỗ trợ Workspace</span>
                     </Space>
                 </div>
             </div>
@@ -208,32 +203,33 @@ const LandingPage = () => {
         <div id="features" style={styles.section}>
             <Row gutter={[80, 48]} align="middle">
                 <Col xs={24} md={12}>
-                    <div style={styles.iconBox}><RobotFilled /></div>
-                    <Title level={2} style={{fontSize: 40}}>Trợ lý AI Thông minh</Title>
+                    <div style={styles.iconBox}><AppstoreOutlined /></div>
+                    <Title level={2} style={{fontSize: 40}}>Quản Lý Đa Kênh & Team</Title>
                     <Paragraph style={{ fontSize: 18, color: '#666', lineHeight: 1.7 }}>
-                        Bí ý tưởng? Chỉ cần nhập từ khóa, AI sẽ tự động viết caption, kịch bản video chuẩn SEO, bắt trend cực nhanh.
+                        Không còn phải đăng nhập/đăng xuất liên tục. Quản lý không giới hạn tài khoản YouTube và Facebook Fanpage trên một giao diện duy nhất.
                     </Paragraph>
                     <ul style={{ listStyle: 'none', padding: 0, color: '#666', lineHeight: 2.5, fontSize: 16 }}>
-                        <li><CheckCircleFilled style={{ color: colors.primary, marginRight: 10 }} /> Viết đa dạng chủ đề: Sale, Review, Vlog...</li>
-                        <li><CheckCircleFilled style={{ color: colors.primary, marginRight: 10 }} /> Tự động thêm icon sinh động.</li>
-                        <li><CheckCircleFilled style={{ color: colors.primary, marginRight: 10 }} /> Tiết kiệm 90% thời gian viết lách.</li>
+                        <li><CheckCircleFilled style={{ color: colors.primary, marginRight: 10 }} /> <b>Workspace:</b> Tạo không gian làm việc riêng cho từng dự án.</li>
+                        <li><CheckCircleFilled style={{ color: colors.primary, marginRight: 10 }} /> <b>Phân quyền:</b> Mời thành viên và cấp quyền (Admin, Editor...).</li>
+                        <li><CheckCircleFilled style={{ color: colors.primary, marginRight: 10 }} /> <b>Hộp thư tập trung:</b> Trả lời bình luận từ mọi kênh tại một nơi.</li>
                     </ul>
                 </Col>
                 <Col xs={24} md={12}>
                     <Card style={styles.glassCard} variant="borderless">
                         <div style={{ padding: 25 }}>
-                            <div style={{ background: '#fff0f6', padding: '10px 20px', borderRadius: 20, marginBottom: 20, width: 'fit-content', border: `1px solid ${colors.primary}20` }}>
-                                <Text strong style={{color: colors.primary}}>User:</Text> "Viết caption bán giày Tết"
-                            </div>
                             <div style={{ background: '#fff', padding: 25, borderRadius: 16, border: '1px solid #eee', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-                                <div style={{ fontSize: 13, color: colors.primary, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-                                    <RobotFilled /> AI đang viết...
+                                <div style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 15, display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>Team Marketing</span>
+                                    <Tag color="green">Active</Tag>
                                 </div>
-                                <Text style={{fontSize: 16, lineHeight: 1.6}}>
-                                    "🧧 <b>TẾT ĐẾN CHÂN RỒI - SẮM GIÀY MỚI THÔI!</b> 👟<br/><br/>
-                                    Sale sập sàn 50% toàn bộ mẫu Sneaker đón Xuân Bính Ngọ. <br/>
-                                    👉 Êm ái du xuân - Nhận lì xì khủng!"
-                                </Text>
+                                <Space direction="vertical" style={{ width: '100%' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#f9f9f9', borderRadius: 8 }}>
+                                        <TeamOutlined style={{ color: '#1890ff' }} /> <span>Quản lý 5 thành viên</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#f9f9f9', borderRadius: 8 }}>
+                                        <GlobalOutlined style={{ color: '#faad14' }} /> <span>Kết nối 10+ Tài khoản MXH</span>
+                                    </div>
+                                </Space>
                             </div>
                         </div>
                     </Card>
@@ -269,76 +265,8 @@ const LandingPage = () => {
             </Row>
         </div>
 
-        {/* 5. PRICING (ĐÃ GẮN ID="pricing") */}
-        <div id="pricing" style={{ background: '#fffcf5', padding: '100px 20px' }}>
-            <div style={{ textAlign: 'center', marginBottom: 70 }}>
-                <Title level={2}>Bảng giá linh hoạt</Title>
-                <Text type="secondary" style={{fontSize: 16}}>Chọn gói phù hợp với quy mô của bạn</Text>
-            </div>
-            
-            <Row gutter={[32, 32]} justify="center" style={{ maxWidth: 1100, margin: '0 auto' }}>
-                {/* Gói Free */}
-                <Col xs={24} md={8}>
-                    <Card hoverable style={{ height: '100%', borderRadius: 20, textAlign: 'center', borderTop: '6px solid #d9d9d9', padding: 20 }}>
-                        <Title level={3}>Starter</Title>
-                        <div style={{ fontSize: 40, fontWeight: '800', color: '#333', marginBottom: 5 }}>0đ</div>
-                        <Text type="secondary">Trọn đời</Text>
-                        <Divider />
-                        <ul style={{ listStyle: 'none', padding: 0, lineHeight: 2.8, textAlign: 'left', fontSize: 15 }}>
-                            <li><CheckCircleFilled style={{ color: '#52c41a', marginRight: 8 }} /> 1 Tài khoản kết nối</li>
-                            <li><CheckCircleFilled style={{ color: '#52c41a', marginRight: 8 }} /> Lên lịch 10 bài/tháng</li>
-                            <li style={{ color: '#ccc' }}><CloseCircleOutlined style={{marginRight: 8}} /> Không có AI Writer</li>
-                            <li style={{ color: '#ccc' }}><CloseCircleOutlined style={{marginRight: 8}} /> Báo cáo cơ bản</li>
-                        </ul>
-                        <Button block size="large" style={{ marginTop: 30, height: 45, borderRadius: 22 }}>Đăng ký Free</Button>
-                    </Card>
-                </Col>
-
-                {/* Gói PRO */}
-                <Col xs={24} md={8}>
-                    <div style={{ position: 'relative', transform: 'scale(1.08)', zIndex: 10 }}>
-                        <div style={{ position: 'absolute', top: -16, left: 0, right: 0, textAlign: 'center', zIndex: 20 }}>
-                             <Tag color="#d4145a" style={{ padding: '6px 16px', borderRadius: 20, border: 'none', fontWeight: 'bold', fontSize: 13, boxShadow: '0 5px 15px rgba(212, 20, 90, 0.3)' }}>PHỔ BIẾN NHẤT</Tag>
-                        </div>
-                        <Card hoverable style={{ height: '100%', borderRadius: 20, textAlign: 'center', border: `2px solid ${colors.primary}`, boxShadow: '0 20px 60px rgba(212, 20, 90, 0.15)', padding: 20 }}>
-                            <CrownFilled style={{ fontSize: 32, color: colors.secondary, marginBottom: 15 }} />
-                            <Title level={3} style={{ color: colors.primary, marginTop: 0 }}>Pro</Title>
-                            <div style={{ fontSize: 48, fontWeight: '800', color: colors.primary, marginBottom: 5 }}>199k</div>
-                            <Text type="secondary">/ tháng</Text>
-                            <Divider />
-                            <ul style={{ listStyle: 'none', padding: 0, lineHeight: 2.8, textAlign: 'left', fontSize: 15 }}>
-                                <li><CheckCircleFilled style={{ color: colors.secondary, marginRight: 8 }} /> <b>5 Tài khoản</b> kết nối</li>
-                                <li><CheckCircleFilled style={{ color: colors.secondary, marginRight: 8 }} /> <b>Không giới hạn</b> bài đăng</li>
-                                <li><CheckCircleFilled style={{ color: colors.secondary, marginRight: 8 }} /> <b>AI Writer</b> (GPT-4)</li>
-                                <li><CheckCircleFilled style={{ color: colors.secondary, marginRight: 8 }} /> Báo cáo chuyên sâu</li>
-                            </ul>
-                            <Button type="primary" block size="large" style={{ marginTop: 30, height: 45, borderRadius: 22, background: colors.buttonGradient, border: 'none', fontWeight: 700 }} onClick={() => navigate('/register')}>Dùng thử 14 ngày</Button>
-                        </Card>
-                    </div>
-                </Col>
-
-                {/* Gói Agency */}
-                <Col xs={24} md={8}>
-                    <Card hoverable style={{ height: '100%', borderRadius: 20, textAlign: 'center', borderTop: '6px solid #333', padding: 20 }}>
-                        <TeamOutlined style={{ fontSize: 32, color: '#333', marginBottom: 15 }} />
-                        <Title level={3}>Agency</Title>
-                        <div style={{ fontSize: 40, fontWeight: '800', color: '#333', marginBottom: 5 }}>999k</div>
-                        <Text type="secondary">/ tháng</Text>
-                        <Divider />
-                        <ul style={{ listStyle: 'none', padding: 0, lineHeight: 2.8, textAlign: 'left', fontSize: 15 }}>
-                            <li><CheckCircleFilled style={{ color: '#333', marginRight: 8 }} /> <b>50 Tài khoản</b> kết nối</li>
-                            <li><CheckCircleFilled style={{ color: '#333', marginRight: 8 }} /> Quản lý Team/Nhân viên</li>
-                            <li><CheckCircleFilled style={{ color: '#333', marginRight: 8 }} /> API Access</li>
-                            <li><CheckCircleFilled style={{ color: '#333', marginRight: 8 }} /> Support 24/7</li>
-                        </ul>
-                        <Button block size="large" style={{ marginTop: 30, height: 45, borderRadius: 22 }}>Liên hệ Sale</Button>
-                    </Card>
-                </Col>
-            </Row>
-        </div>
-
-        {/* 6. FAQ */}
-        <div style={{ padding: '100px 20px', maxWidth: 800, margin: '0 auto' }}>
+        {/* 5. FAQ (ĐÃ GẮN ID="faq") */}
+        <div id="faq" style={{ padding: '100px 20px', maxWidth: 800, margin: '0 auto', background: '#fff' }}>
             <Title level={2} style={{ textAlign: 'center', marginBottom: 50 }}>Câu hỏi thường gặp</Title>
             <Collapse 
                 ghost 
@@ -348,24 +276,24 @@ const LandingPage = () => {
                 items={[
                     {
                         key: '1',
-                        label: <span style={{fontWeight: 600, fontSize: 16}}>Tôi có thể hủy gói Pro bất cứ lúc nào không?</span>,
-                        children: <p style={{color: '#666'}}>Hoàn toàn được. Bạn có thể hủy gia hạn bất kỳ lúc nào trong phần Cài đặt mà không mất phí phạt.</p>,
+                        label: <span style={{fontWeight: 600, fontSize: 16}}>Social Pro có an toàn cho tài khoản của tôi không?</span>,
+                        children: <p style={{color: '#666'}}>Tuyệt đối an toàn. Chúng tôi sử dụng API chính thức của Facebook và YouTube để kết nối. Mật khẩu của bạn không bao giờ được lưu trữ trên hệ thống của chúng tôi.</p>,
                     },
                     {
                         key: '2',
-                        label: <span style={{fontWeight: 600, fontSize: 16}}>Social Pro có an toàn cho tài khoản của tôi không?</span>,
-                        children: <p style={{color: '#666'}}>Chúng tôi sử dụng API chính thức của Facebook và YouTube. Mật khẩu của bạn không bao giờ được lưu trữ trên hệ thống của chúng tôi.</p>,
+                        label: <span style={{fontWeight: 600, fontSize: 16}}>Tôi có thể quản lý bao nhiêu tài khoản?</span>,
+                        children: <p style={{color: '#666'}}>Hiện tại Social Pro đang cho phép kết nối không giới hạn số lượng tài khoản trong phiên bản Khai Xuân này.</p>,
                     },
                     {
                         key: '3',
-                        label: <span style={{fontWeight: 600, fontSize: 16}}>AI có hỗ trợ tiếng Việt tốt không?</span>,
-                        children: <p style={{color: '#666'}}>Rất tốt! AI được tối ưu hóa cho ngôn ngữ Tiếng Việt, hiểu được tiếng lóng và các trend mới nhất hiện nay.</p>,
+                        label: <span style={{fontWeight: 600, fontSize: 16}}>Chức năng làm việc nhóm hoạt động như thế nào?</span>,
+                        children: <p style={{color: '#666'}}>Bạn có thể tạo các "Workspace", mời thành viên vào qua email và phân quyền cho họ. Mọi hoạt động đăng bài, trả lời tin nhắn sẽ được ghi log lại đầy đủ.</p>,
                     },
                 ]}
             />
         </div>
 
-        {/* 7. FOOTER */}
+        {/* 6. FOOTER */}
         <Footer style={{ background: '#111', color: '#fff', padding: '80px 20px 40px' }}>
              <Row gutter={[48, 48]} style={{ maxWidth: 1200, margin: '0 auto' }}>
                 <Col xs={24} md={8}>
@@ -381,9 +309,8 @@ const LandingPage = () => {
                     <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 25, color: '#fff' }}>Sản phẩm</div>
                     <Space orientation="vertical" style={{ color: '#888' }} size={15}>
                         <a href="#" style={{color: '#888'}}>Tính năng</a>
-                        <a href="#" style={{color: '#888'}}>Bảng giá</a>
+                        <a href="#" style={{color: '#888'}}>Hướng dẫn</a>
                         <a href="#" style={{color: '#888'}}>API</a>
-                        <a href="#" style={{color: '#888'}}>Download</a>
                     </Space>
                 </Col>
                 
@@ -393,14 +320,13 @@ const LandingPage = () => {
                         <a href="#" style={{color: '#888'}}>Về chúng tôi</a>
                         <a href="#" style={{color: '#888'}}>Blog</a>
                         <a href="#" style={{color: '#888'}}>Tuyển dụng</a>
-                        <a href="#" style={{color: '#888'}}>Đối tác</a>
                     </Space>
                 </Col>
                 
                 <Col xs={24} md={6}>
                     <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 25, color: '#fff' }}>Liên hệ</div>
                     <Space orientation="vertical" style={{ color: '#888' }} size={15}>
-                        <span style={{display: 'flex', gap: 10}}><MailOutlined /> contact@socialpro.vn</span>
+                        <span style={{display: 'flex', gap: 10}}><MailOutlined /> nhanthach2603@gmail.com</span>
                         <span style={{display: 'flex', gap: 10}}><PhoneOutlined /> 1900 1234</span>
                         <span style={{display: 'flex', gap: 10}}><EnvironmentOutlined /> Hồ Chí Minh, Việt Nam</span>
                     </Space>
@@ -410,7 +336,7 @@ const LandingPage = () => {
              <Divider style={{ borderColor: '#333', margin: '60px 0 30px' }} />
              
              <div style={{ textAlign: 'center', color: '#555', fontSize: 14 }}>
-                 © 2025 Social Pro. All rights reserved.
+                 © 2026 Social Pro. All rights reserved.
              </div>
         </Footer>
       </Content>

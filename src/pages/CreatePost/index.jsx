@@ -1,5 +1,6 @@
+// src/pages/CreatePost/index.jsx
 import React from 'react';
-import { Tabs, Typography } from 'antd';
+import { Tabs, Typography, theme } from 'antd'; // 1. Thêm import theme
 import { YoutubeFilled, FacebookFilled, RocketFilled } from '@ant-design/icons';
 import YoutubeTab from './YoutubeTab';
 import FacebookTab from './FacebookTab';
@@ -8,6 +9,9 @@ import BulkTab from './BulkTab';
 const { Title, Text } = Typography;
 
 const CreatePost = () => {
+    // 2. Lấy token màu từ theme
+    const { token } = theme.useToken();
+
     const items = [
         {
             key: 'youtube',
@@ -38,7 +42,12 @@ const CreatePost = () => {
                 type="card" 
                 size="large"
                 items={items} 
-                style={{ background: '#f5f7fa' }} // Nền nhẹ cho Tabs
+                style={{ 
+                    // 3. Sửa lại style động theo theme
+                    background: token.colorBgContainer, 
+                    padding: 16,
+                    borderRadius: token.borderRadiusLG
+                }} 
             />
         </div>
     );

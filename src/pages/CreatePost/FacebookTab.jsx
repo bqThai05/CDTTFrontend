@@ -1,8 +1,9 @@
+// src/pages/CreatePost/FacebookTab.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   Form, Input, Select, Button, Upload, Row, Col, 
   message, Card, Typography, Divider, 
-  Segmented, Avatar, Tag, Space, Image, Spin 
+  Segmented, Avatar, Tag, Space, Image, Spin, theme // <--- Thêm theme
 } from 'antd';
 import { 
   FileImageOutlined, FacebookFilled, VideoCameraFilled, 
@@ -18,18 +19,22 @@ const { Dragger } = Upload;
 
 // --- 1. COMPONENT PREVIEW FACEBOOK ---
 const FacebookPreview = ({ type, data, pageInfo }) => {
+    // Lấy token màu để xử lý Dark Mode cho Preview
+    const { token } = theme.useToken();
+
     const safeContent = data.content || "Nội dung bài viết sẽ hiện ở đây...";
     const safeDate = "Vừa xong";
     const pageName = pageInfo?.name || "Tên Fanpage";
     const pageAvatar = pageInfo?.picture?.data?.url || "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg";
 
     const cardStyle = {
-        background: '#fff',
+        background: token.colorBgContainer, // Sửa: Nền động
         borderRadius: 8,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+        boxShadow: token.boxShadowSecondary, // Sửa: Shadow động
         maxWidth: 400,
         margin: '0 auto',
-        fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif'
+        fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif',
+        border: `1px solid ${token.colorBorderSecondary}` // Thêm viền nhẹ
     };
 
     return (
@@ -38,8 +43,8 @@ const FacebookPreview = ({ type, data, pageInfo }) => {
             <div style={{ padding: 12, display: 'flex', gap: 10, alignItems: 'center' }}>
                 <Avatar src={pageAvatar} size={40} />
                 <div>
-                    <Text strong style={{ display: 'block', fontSize: 15, color: '#050505' }}>{pageName}</Text>
-                    <div style={{ fontSize: 13, color: '#65676b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Text strong style={{ display: 'block', fontSize: 15, color: token.colorText }}>{pageName}</Text>
+                    <div style={{ fontSize: 13, color: token.colorTextSecondary, display: 'flex', alignItems: 'center', gap: 4 }}>
                         {safeDate} · <GlobalOutlined style={{ fontSize: 12 }} />
                     </div>
                 </div>
@@ -47,7 +52,7 @@ const FacebookPreview = ({ type, data, pageInfo }) => {
 
             {/* Nội dung Text */}
             <div style={{ padding: '0 16px 16px 16px' }}>
-                <Paragraph style={{ fontSize: 15, color: '#050505', marginBottom: 0, whiteSpace: 'pre-line' }}>
+                <Paragraph style={{ fontSize: 15, color: token.colorText, marginBottom: 0, whiteSpace: 'pre-line' }}>
                     {safeContent}
                 </Paragraph>
             </div>
@@ -74,14 +79,20 @@ const FacebookPreview = ({ type, data, pageInfo }) => {
 
             {/* Footer: Like/Comment/Share */}
             <div style={{ padding: '10px 16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#65676b', fontSize: 14, marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: token.colorTextSecondary, fontSize: 14, marginBottom: 12 }}>
                     <span><LikeOutlined style={{color: '#1877f2', marginRight: 4}}/> 12</span>
                     <span>5 bình luận</span>
                 </div>
-                <div style={{ borderTop: '1px solid #ced0d4', borderBottom: '1px solid #ced0d4', padding: '6px 0', display: 'flex', justifyContent: 'space-around' }}>
-                    <Button type="text" icon={<LikeOutlined />} style={{ color: '#65676b', fontWeight: 600 }}>Thích</Button>
-                    <Button type="text" icon={<CommentOutlined />} style={{ color: '#65676b', fontWeight: 600 }}>Bình luận</Button>
-                    <Button type="text" icon={<ShareAltOutlined />} style={{ color: '#65676b', fontWeight: 600 }}>Chia sẻ</Button>
+                <div style={{ 
+                    borderTop: `1px solid ${token.colorBorderSecondary}`, 
+                    borderBottom: `1px solid ${token.colorBorderSecondary}`, 
+                    padding: '6px 0', 
+                    display: 'flex', 
+                    justifyContent: 'space-around' 
+                }}>
+                    <Button type="text" icon={<LikeOutlined />} style={{ color: token.colorTextSecondary, fontWeight: 600 }}>Thích</Button>
+                    <Button type="text" icon={<CommentOutlined />} style={{ color: token.colorTextSecondary, fontWeight: 600 }}>Bình luận</Button>
+                    <Button type="text" icon={<ShareAltOutlined />} style={{ color: token.colorTextSecondary, fontWeight: 600 }}>Chia sẻ</Button>
                 </div>
             </div>
         </div>
@@ -90,6 +101,7 @@ const FacebookPreview = ({ type, data, pageInfo }) => {
 
 // --- 2. COMPONENT CHÍNH ---
 const FacebookTab = () => {
+    const { token } = theme.useToken(); // Lấy token cho Component chính
     const [form] = Form.useForm();
     const [postType, setPostType] = useState('post'); // 'post' | 'reel'
     const [loading, setLoading] = useState(false);
@@ -210,7 +222,11 @@ const FacebookTab = () => {
             <Row gutter={24}>
                 {/* CỘT TRÁI: FORM */}
                 <Col xs={24} lg={14}>
-                    <Card style={{ borderRadius: 12 }}>
+                    <Card style={{ 
+                        borderRadius: 12,
+                        background: token.colorBgContainer, // Sửa: Màu nền động
+                        boxShadow: token.boxShadowTertiary
+                    }}>
                         <div style={{ marginBottom: 24, textAlign: 'center' }}>
                             <Segmented
                                 options={[
@@ -239,7 +255,10 @@ const FacebookTab = () => {
                                         >
                                             {accounts.map(acc => (
                                                 <Select.Option key={acc.id} value={acc.id}>
-                                                    <Space><Avatar src={acc.avatar_url} size="small"/> {acc.name}</Space>
+                                                    <Space>
+                                                        <Avatar src={acc.avatar_url} size="small"/> 
+                                                        <span style={{color: token.colorText}}>{acc.name}</span>
+                                                    </Space>
                                                 </Select.Option>
                                             ))}
                                         </Select>
@@ -256,7 +275,10 @@ const FacebookTab = () => {
                                         >
                                             {pages.map(p => (
                                                 <Select.Option key={p.id} value={p.id}>
-                                                    <Space><Avatar src={p.picture?.data?.url} size="small" shape="square"/> {p.name}</Space>
+                                                    <Space>
+                                                        <Avatar src={p.picture?.data?.url} size="small" shape="square"/> 
+                                                        <span style={{color: token.colorText}}>{p.name}</span>
+                                                    </Space>
                                                 </Select.Option>
                                             ))}
                                         </Select>
@@ -276,11 +298,12 @@ const FacebookTab = () => {
                                     maxCount={1}
                                     accept={postType === 'reel' ? "video/*" : "image/*"}
                                     height={120}
+                                    style={{ background: token.colorFillAlter }} // Sửa: Nền upload động
                                 >
                                     <p className="ant-upload-drag-icon">
                                         {postType === 'reel' ? <VideoCameraFilled style={{color:'#1877f2'}}/> : <FileImageOutlined style={{color:'#42b72a'}}/>}
                                     </p>
-                                    <p className="ant-upload-text">
+                                    <p className="ant-upload-text" style={{color: token.colorText}}>
                                         Kéo thả {postType === 'reel' ? 'Video' : 'Ảnh'} vào đây
                                     </p>
                                 </Dragger>

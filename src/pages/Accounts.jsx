@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Button, Avatar, Typography, Row, Col, message, Spin, Modal, 
-  Tooltip, Empty, Tag, Statistic, Tabs, Divider, Space 
+  Tooltip, Empty, Tag, Statistic, Tabs, Divider, Space, theme // 1. Thêm import theme
 } from 'antd';
 import { 
   YoutubeFilled, 
@@ -27,9 +27,11 @@ const Accounts = () => {
   const [accounts, setAccounts] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // 2. Lấy token màu để xử lý Dark Mode
+  const { token } = theme.useToken();
 
-  // --- LOGIC XỬ LÝ DỮ LIỆU (ĐÃ FIX ĐỂ HIỆN AVATAR & VIEW) ---
-
+  // --- LOGIC XỬ LÝ DỮ LIỆU ---
   const fetchAccounts = async () => {
     setLoading(true);
     try {
@@ -51,34 +53,27 @@ const Accounts = () => {
         };
 
         if (acc.platform === 'youtube') {
-          // Avatar mặc định
           if (!processedAcc.avatarUrl) {
               processedAcc.avatarUrl = 'https://www.gstatic.com/youtube/img/branding/youtubelogo/2x/youtubelogo_color_24dp.png';
           }
           try {
             if (acc.id) {
                 const channelsRes = await getYouTubeChannels(acc.id);
-                // Kiểm tra kỹ dữ liệu trả về (Data wrapper)
                 const channelData = channelsRes.data?.data || channelsRes.data || [];
                 
                 if (channelData.length > 0) {
                   const ch = channelData[0];
-                  
-                  // --- FIX 1: LẤY THÔNG TIN LINH HOẠT ---
-                  // Youtube API thường trả về trong 'snippet' và 'statistics'
                   const snippet = ch.snippet || ch;
                   const statistics = ch.statistics || ch;
 
                   processedAcc.displayName = snippet.title || snippet.name || processedAcc.displayName;
                   
-                  // Lấy Avatar: Ưu tiên ảnh chất lượng cao
                   processedAcc.avatarUrl = snippet.thumbnails?.high?.url || 
                                            snippet.thumbnails?.medium?.url || 
                                            snippet.thumbnail || 
                                            snippet.thumbnail_url || 
                                            processedAcc.avatarUrl;
 
-                  // Lấy Stats: Chấp nhận cả camelCase (viewCount) và snake_case (view_count)
                   processedAcc.stats = {
                       subscribers: parseInt(statistics.subscriberCount || statistics.subscriber_count || statistics.subscribers || 0),
                       views: parseInt(statistics.viewCount || statistics.view_count || statistics.views || 0),
@@ -91,7 +86,6 @@ const Accounts = () => {
             console.warn(`Lỗi lấy chi tiết kênh ${acc.id}:`, e);
           }
         } else {
-             // Logic Facebook
              if (!processedAcc.avatarUrl) {
                 processedAcc.avatarUrl = 'https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg';
              }
@@ -113,9 +107,9 @@ const Accounts = () => {
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const success = queryParams.get('success');
-    const token = queryParams.get('token');
+    const urlToken = queryParams.get('token');
 
-    if (token) localStorage.setItem('access_token', token);
+    if (urlToken) localStorage.setItem('access_token', urlToken);
 
     if (success) {
       message.success('Kết nối tài khoản thành công!');
@@ -125,9 +119,9 @@ const Accounts = () => {
   }, [location, navigate]);
 
   const handleConnect = (platform) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) return message.error("Bạn chưa đăng nhập!");
-    window.location.href = `${BASE_URL}/${platform}/authorize/?token=${token}`;
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) return message.error("Bạn chưa đăng nhập!");
+    window.location.href = `${BASE_URL}/${platform}/authorize/?token=${accessToken}`;
   };
 
   const handleDisconnect = (id) => {
@@ -154,22 +148,35 @@ const Accounts = () => {
   const youtubeAccounts = accounts.filter(acc => acc.platformType === 'youtube');
   const facebookAccounts = accounts.filter(acc => acc.platformType === 'facebook');
 
-  // --- COMPONENT CON: THẺ TÀI KHOẢN (ĐÃ TINH CHỈNH) ---
+  // --- COMPONENT CON: THẺ TÀI KHOẢN (ĐÃ SỬA DARK MODE) ---
   const AccountCard = ({ acc, type }) => {
       const isYoutube = type === 'youtube';
       const color = isYoutube ? '#ff0000' : '#1877f2';
-      const bgColor = isYoutube ? '#fff1f0' : '#f0f5ff';
+      
+      // Sửa màu nền header card để phù hợp với Dark Mode
+      // Nếu Dark Mode: dùng màu nền tối hơn chút, nếu Light Mode: dùng màu nhạt đặc trưng
+      const headerBgColor = token.algorithm === theme.darkAlgorithm 
+          ? (isYoutube ? '#3a1616' : '#111d2c') // Màu tối đỏ/xanh nhạt
+          : (isYoutube ? '#fff1f0' : '#f0f5ff'); // Màu sáng
+
       const Icon = isYoutube ? YoutubeFilled : FacebookFilled;
 
       return (
         <Col xs={24} sm={12} lg={8} xl={6} key={acc.id}>
             <Card
                 hoverable
-                style={{ borderRadius: 16, overflow: 'hidden', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', height: '100%' }}
+                style={{ 
+                    borderRadius: 16, 
+                    overflow: 'hidden', 
+                    border: 'none', 
+                    boxShadow: token.boxShadowTertiary, 
+                    height: '100%',
+                    background: token.colorBgContainer // Sửa: Nền động
+                }}
                 styles={{ body: { padding: 0, height: '100%', display: 'flex', flexDirection: 'column' } }}
             >
                 {/* Header Card */}
-                <div style={{ padding: '12px 16px', background: bgColor, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '12px 16px', background: headerBgColor, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Tag color={isYoutube ? 'red' : 'blue'} style={{ margin: 0, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
                         <Icon /> {isYoutube ? 'Channel' : 'Fanpage'}
                     </Tag>
@@ -181,7 +188,6 @@ const Accounts = () => {
 
                 {/* Body Card */}
                 <div style={{ padding: 24, textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    {/* AVATAR: Thêm objectFit để ảnh luôn đẹp */}
                     <Avatar 
                         src={acc.avatarUrl} 
                         size={84} 
@@ -189,24 +195,30 @@ const Accounts = () => {
                             border: `3px solid ${color}`, 
                             marginBottom: 16, 
                             padding: 2, 
-                            background: '#fff',
-                            objectFit: 'cover' // Giúp ảnh không bị méo
+                            background: token.colorBgContainer, // Sửa: Nền avatar động
+                            objectFit: 'cover'
                         }} 
                     />
-                    <Title level={5} style={{ margin: 0, width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={acc.displayName}>
+                    <Title level={5} style={{ margin: 0, width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: token.colorText }} title={acc.displayName}>
                         {acc.displayName}
                     </Title>
                     <Text type="secondary" style={{ fontSize: 12, marginBottom: 16 }}>ID: {acc.social_id}</Text>
                     
                     {/* Số liệu chi tiết */}
-                    <div style={{ width: '100%', background: '#fafafa', borderRadius: 8, padding: '12px', marginTop: 'auto' }}>
+                    <div style={{ 
+                        width: '100%', 
+                        background: token.colorFillAlter, // Sửa: Nền box thống kê (xám nhạt ở light, tối hơn ở dark)
+                        borderRadius: 8, 
+                        padding: '12px', 
+                        marginTop: 'auto' 
+                    }}>
                         <Row gutter={8}>
-                            <Col span={12} style={{ borderRight: '1px solid #eee' }}>
+                            <Col span={12} style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}>
                                 <Statistic 
                                     title={isYoutube ? "Subscribers" : "Followers"} 
                                     value={acc.stats.subscribers} 
-                                    formatter={(val) => parseInt(val).toLocaleString()} // Format số
-                                    styles={{ content: { fontSize: 16, fontWeight: 'bold', color: '#333' } }}
+                                    formatter={(val) => parseInt(val).toLocaleString()}
+                                    valueStyle={{ fontSize: 16, fontWeight: 'bold', color: token.colorText }} // Sửa màu số
                                     prefix={<UsergroupAddOutlined style={{ fontSize: 14 }} />}
                                 />
                             </Col>
@@ -216,7 +228,7 @@ const Accounts = () => {
                                         title="Videos" 
                                         value={acc.stats.videos} 
                                         formatter={(val) => parseInt(val).toLocaleString()}
-                                        styles={{ content: { fontSize: 16, fontWeight: 'bold', color: '#333' } }}
+                                        valueStyle={{ fontSize: 16, fontWeight: 'bold', color: token.colorText }}
                                         prefix={<VideoCameraOutlined style={{ fontSize: 14 }} />}
                                     />
                                 ) : (
@@ -224,7 +236,7 @@ const Accounts = () => {
                                         title="Likes" 
                                         value={acc.stats.likes} 
                                         formatter={(val) => parseInt(val).toLocaleString()}
-                                        styles={{ content: { fontSize: 16, fontWeight: 'bold', color: '#333' } }}
+                                        valueStyle={{ fontSize: 16, fontWeight: 'bold', color: token.colorText }}
                                         prefix={<LikeOutlined style={{ fontSize: 14 }} />}
                                     />
                                 )}
@@ -232,9 +244,8 @@ const Accounts = () => {
                         </Row>
                         {isYoutube && (
                             <>
-                                <Divider style={{ margin: '8px 0' }} />
-                                {/* VIEW COUNT: Hiện rõ ràng */}
-                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, fontSize: 13, color: '#666', fontWeight: 500 }}>
+                                <Divider style={{ margin: '8px 0', borderColor: token.colorBorderSecondary }} />
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, fontSize: 13, color: token.colorTextSecondary, fontWeight: 500 }}>
                                     <EyeOutlined /> {parseInt(acc.stats.views).toLocaleString()} Lượt xem
                                 </div>
                             </>
@@ -246,16 +257,20 @@ const Accounts = () => {
       );
   };
 
-  // --- GIAO DIỆN CHÍNH ---
-
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
       
-      {/* HEADER & THỐNG KÊ NHANH */}
-      <div style={{ marginBottom: 24, background: '#fff', padding: '24px 32px', borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+      {/* HEADER */}
+      <div style={{ 
+          marginBottom: 24, 
+          background: token.colorBgContainer, // Sửa: Nền động
+          padding: '24px 32px', 
+          borderRadius: 16, 
+          boxShadow: token.boxShadowTertiary 
+      }}>
         <Row align="middle" justify="space-between" gutter={[24, 24]}>
             <Col xs={24} md={12}>
-                <Title level={2} style={{ margin: 0 }}>Trung Tâm Tài Khoản</Title>
+                <Title level={2} style={{ margin: 0, color: token.colorTextHeading }}>Trung Tâm Tài Khoản</Title>
                 <Text type="secondary">Quản lý và đồng bộ tất cả các kênh mạng xã hội của bạn tại một nơi.</Text>
             </Col>
             <Col xs={24} md={12} style={{ textAlign: 'right' }}>
@@ -267,7 +282,7 @@ const Accounts = () => {
         </Row>
       </div>
 
-      {/* TABS PHÂN LOẠI */}
+      {/* TABS */}
       <Spin spinning={loading} tip="Đang đồng bộ dữ liệu...">
         <Tabs 
             defaultActiveKey="youtube" 
@@ -290,7 +305,15 @@ const Accounts = () => {
                                 </Button>
                             </div>
                             {youtubeAccounts.length === 0 ? (
-                                <Empty description="Chưa có kênh YouTube nào" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{background: '#fff', padding: 40, borderRadius: 12}} />
+                                <Empty 
+                                    description="Chưa có kênh YouTube nào" 
+                                    image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                                    style={{
+                                        background: token.colorBgContainer, // Sửa: Nền Empty
+                                        padding: 40, 
+                                        borderRadius: 12
+                                    }} 
+                                />
                             ) : (
                                 <Row gutter={[24, 24]}>
                                     {youtubeAccounts.map(acc => <AccountCard key={acc.id} acc={acc} type="youtube" />)}
@@ -314,7 +337,15 @@ const Accounts = () => {
                                 </Button>
                             </div>
                             {facebookAccounts.length === 0 ? (
-                                <Empty description="Chưa có Fanpage nào" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{background: '#fff', padding: 40, borderRadius: 12}} />
+                                <Empty 
+                                    description="Chưa có Fanpage nào" 
+                                    image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                                    style={{
+                                        background: token.colorBgContainer, // Sửa: Nền Empty
+                                        padding: 40, 
+                                        borderRadius: 12
+                                    }} 
+                                />
                             ) : (
                                 <Row gutter={[24, 24]}>
                                     {facebookAccounts.map(acc => <AccountCard key={acc.id} acc={acc} type="facebook" />)}

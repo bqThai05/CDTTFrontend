@@ -1,8 +1,9 @@
+// src/pages/CreatePost/YoutubeTab.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   Form, Input, Select, Button, Upload, Row, Col, 
   message, Card, Typography, Divider, 
-  Segmented, Avatar, Tag, Space, Image 
+  Segmented, Avatar, Tag, Space, Image, theme // 1. Thêm import theme
 } from 'antd';
 import { 
   InboxOutlined, YoutubeFilled, UploadOutlined, 
@@ -12,31 +13,34 @@ import {
   LikeOutlined, CommentOutlined, MoreOutlined,
   PictureFilled, PlayCircleFilled
 } from '@ant-design/icons';
-// THÊM: Import getYouTubeChannels để lấy thông tin kênh chuẩn
 import { getAllSocialAccounts, postToYouTube, createYouTubePost, getYouTubeChannels } from '../../services/api';
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 const { Dragger } = Upload;
 
-// --- 1. COMPONENT PREVIEW (ĐÃ CHỈNH SỬA) ---
+// --- 1. COMPONENT PREVIEW (ĐÃ SỬA DARK MODE) ---
 const YoutubePreview = ({ type, data, avatar }) => {
+    // 2. Lấy token màu để xử lý giao diện
+    const { token } = theme.useToken();
+
     const safeTitle = data.title || "Tiêu đề video của bạn sẽ hiện ở đây";
     const safeDesc = data.description || "Mô tả video sẽ hiện ở đây. Phần này hiển thị chi tiết nội dung video của bạn...";
     const safeDate = "Vừa xong";
     const channelName = data.channelName || "Tên Kênh";
     
+    // Style chung cho Card Preview
     const cardStyle = {
-        background: '#fff',
+        background: token.colorBgContainer, // Sửa: Màu nền động
         borderRadius: 12,
         overflow: 'hidden',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        border: '1px solid #f0f0f0',
+        boxShadow: token.boxShadowSecondary, // Sửa: Shadow động
+        border: `1px solid ${token.colorBorderSecondary}`, // Sửa: Viền động
         maxWidth: 400,
         margin: '0 auto'
     };
 
-    // --- VIEW 1: VIDEO DÀI (Giữ nguyên) ---
+    // --- VIEW 1: VIDEO DÀI ---
     if (type === 'video') {
         return (
             <div style={cardStyle}>
@@ -56,17 +60,18 @@ const YoutubePreview = ({ type, data, avatar }) => {
                     )}
                 </div>
                 <div style={{ padding: 12 }}>
-                    <Text strong style={{ fontSize: 16, display: 'block', lineHeight: 1.4, marginBottom: 8 }}>{safeTitle}</Text>
+                    <Text strong style={{ fontSize: 16, display: 'block', lineHeight: 1.4, marginBottom: 8, color: token.colorText }}>{safeTitle}</Text>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                         <Avatar src={avatar} icon={<UserOutlined />} size={36} />
                         <div style={{ flex: 1 }}>
-                            <Text strong style={{ fontSize: 13 }}>{channelName}</Text>
-                            <div style={{ fontSize: 12, color: '#606060' }}>0 lượt xem • {safeDate}</div>
+                            <Text strong style={{ fontSize: 13, color: token.colorText }}>{channelName}</Text>
+                            <div style={{ fontSize: 12, color: token.colorTextSecondary }}>0 lượt xem • {safeDate}</div>
                         </div>
                     </div>
-                    <div style={{ marginTop: 12, background: '#f9f9f9', padding: 10, borderRadius: 8 }}>
-                        <Text strong style={{fontSize: 12, color: '#333'}}>Mô tả:</Text>
-                        <Paragraph ellipsis={{ rows: 3, expandable: true, symbol: 'thêm' }} style={{ color: '#606060', marginTop: 4, fontSize: 13, marginBottom: 0, whiteSpace: 'pre-line' }}>
+                    {/* Sửa: Nền box mô tả */}
+                    <div style={{ marginTop: 12, background: token.colorFillAlter, padding: 10, borderRadius: 8 }}>
+                        <Text strong style={{fontSize: 12, color: token.colorText}}>Mô tả:</Text>
+                        <Paragraph ellipsis={{ rows: 3, expandable: true, symbol: 'thêm' }} style={{ color: token.colorTextSecondary, marginTop: 4, fontSize: 13, marginBottom: 0, whiteSpace: 'pre-line' }}>
                             {safeDesc}
                         </Paragraph>
                     </div>
@@ -75,7 +80,7 @@ const YoutubePreview = ({ type, data, avatar }) => {
         );
     }
 
-    // --- VIEW 2: SHORTS (ĐÃ BỎ HOÀN TOÀN MÔ TẢ) ---
+    // --- VIEW 2: SHORTS (Giữ nền tối đặc trưng của Shorts) ---
     if (type === 'shorts') {
         return (
             <div style={{ ...cardStyle, maxWidth: 280, borderRadius: 24, background: '#222', color: '#fff', height: 500, position: 'relative', border: 'none' }}>
@@ -88,14 +93,13 @@ const YoutubePreview = ({ type, data, avatar }) => {
                     </div>
                 )}
                 
-                {/* Overlay thông tin: CHỈ CÓ TIÊU ĐỀ + KÊNH */}
+                {/* Overlay thông tin */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', padding: 16, background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', borderRadius: '0 0 24px 24px' }}>
                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                         <Avatar src={avatar} size={32} style={{border: '1px solid #fff'}} />
                         <Text strong style={{ color: '#fff', fontSize: 13 }}>@{channelName.replace(/\s+/g, '')}</Text>
                         <Button size="small" style={{ height: 24, fontSize: 10, background: '#fff', color: '#000', border:'none', fontWeight: 'bold', borderRadius: 12 }}>Đăng ký</Button>
                      </div>
-                     {/* CHỈ HIỆN TIÊU ĐỀ, KHÔNG CÓ DESC */}
                      <Text style={{ color: '#fff', display: 'block', marginBottom: 8, fontSize: 14, lineHeight: 1.3 }}>{safeTitle}</Text>
                      <Text style={{ color: '#fff', fontSize: 12 }}>🎵 Âm thanh gốc - {channelName}</Text>
                 </div>
@@ -109,7 +113,7 @@ const YoutubePreview = ({ type, data, avatar }) => {
         );
     }
 
-    // --- VIEW 3: POST (ĐÃ CÓ ẢNH) ---
+    // --- VIEW 3: POST ---
     if (type === 'post') {
         return (
             <div style={cardStyle}>
@@ -117,24 +121,24 @@ const YoutubePreview = ({ type, data, avatar }) => {
                     <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                         <Avatar src={avatar} icon={<UserOutlined />} />
                         <div>
-                            <Text strong style={{ display: 'block' }}>{channelName}</Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>{safeDate}</Text>
+                            <Text strong style={{ display: 'block', color: token.colorText }}>{channelName}</Text>
+                            <Text type="secondary" style={{ fontSize: 12, color: token.colorTextSecondary }}>{safeDate}</Text>
                         </div>
                     </div>
-                    <Paragraph style={{ marginBottom: 12, fontSize: 15, whiteSpace: 'pre-line' }}>
+                    <Paragraph style={{ marginBottom: 12, fontSize: 15, whiteSpace: 'pre-line', color: token.colorText }}>
                         {data.content || "Nội dung bài viết..."}
                     </Paragraph>
                     
                     {data.postImgUrl && (
-                        <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #eee' }}>
+                        <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${token.colorBorderSecondary}` }}>
                             <Image src={data.postImgUrl} style={{ width: '100%', display: 'block' }} />
                         </div>
                     )}
                 </div>
-                <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', gap: 24 }}>
-                    <Text type="secondary"><LikeOutlined /> 0</Text>
-                    <Text type="secondary"><LikeOutlined rotate={180} /></Text>
-                    <Text type="secondary"><CommentOutlined /> 0</Text>
+                <div style={{ padding: '8px 16px', borderTop: `1px solid ${token.colorBorderSecondary}`, display: 'flex', gap: 24 }}>
+                    <Text type="secondary" style={{color: token.colorTextSecondary}}><LikeOutlined /> 0</Text>
+                    <Text type="secondary" style={{color: token.colorTextSecondary}}><LikeOutlined rotate={180} /></Text>
+                    <Text type="secondary" style={{color: token.colorTextSecondary}}><CommentOutlined /> 0</Text>
                 </div>
             </div>
         );
@@ -143,6 +147,7 @@ const YoutubePreview = ({ type, data, avatar }) => {
 
 // --- COMPONENT CHÍNH ---
 const YoutubeTab = () => {
+    const { token } = theme.useToken(); // Lấy token cho Component chính
     const [form] = Form.useForm();
     const [postType, setPostType] = useState('video');
     const [loading, setLoading] = useState(false);
@@ -168,14 +173,12 @@ const YoutubeTab = () => {
         { id: '28', name: 'Công nghệ' },
     ];
 
-    // --- SỬA LOGIC LẤY TÀI KHOẢN ---
     useEffect(() => {
         const fetchAccounts = async () => {
             try {
                 const res = await getAllSocialAccounts();
                 const ytAccounts = res.data.filter(acc => acc.platform === 'youtube');
                 
-                // Lấy thêm chi tiết kênh (Tên, Avatar chuẩn) cho từng tài khoản
                 const enrichedAccounts = await Promise.all(ytAccounts.map(async (acc) => {
                     try {
                         const chRes = await getYouTubeChannels(acc.id);
@@ -183,8 +186,8 @@ const YoutubeTab = () => {
                             const ch = chRes.data[0];
                             return {
                                 ...acc,
-                                name: ch.title || acc.name, // Ưu tiên tên kênh thật
-                                avatar: ch.thumbnail_url || ch.thumbnail || acc.avatar_url // Ưu tiên avatar thật
+                                name: ch.title || acc.name,
+                                avatar: ch.thumbnail_url || ch.thumbnail || acc.avatar_url
                             };
                         }
                     } catch (e) { console.error("Lỗi lấy chi tiết kênh", e); }
@@ -193,7 +196,6 @@ const YoutubeTab = () => {
 
                 setAccounts(enrichedAccounts);
                 
-                // Tự động chọn kênh đầu tiên
                 if (enrichedAccounts.length > 0) {
                     const first = enrichedAccounts[0];
                     form.setFieldsValue({ account_id: first.id });
@@ -301,8 +303,13 @@ const YoutubeTab = () => {
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <Row gutter={24}>
+                {/* CỘT FORM */}
                 <Col xs={24} lg={14} xl={15}>
-                    <Card style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                    <Card style={{ 
+                        borderRadius: 12, 
+                        boxShadow: token.boxShadowTertiary,
+                        background: token.colorBgContainer // Sửa: Màu nền động
+                    }}>
                         <div style={{ marginBottom: 24, textAlign: 'center' }}>
                             <Segmented
                                 options={[
@@ -319,7 +326,6 @@ const YoutubeTab = () => {
 
                         <Form form={form} layout="vertical" onFinish={onFinish} onValuesChange={handleValuesChange} initialValues={{ privacy: 'public', category: '22' }}>
                             
-                            {/* Ô CHỌN KÊNH - ĐÃ SỬA ĐỂ HIỆN AVATAR + TÊN */}
                             <Form.Item name="account_id" label="Chọn Kênh đăng tải" rules={[{ required: true }]}>
                                 <Select 
                                     placeholder="Chọn kênh YouTube..." 
@@ -335,13 +341,13 @@ const YoutubeTab = () => {
                                             label={
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: '100%' }}>
                                                     <Avatar src={acc.avatar} size="small" icon={<UserOutlined/>} />
-                                                    <span style={{ fontWeight: 500, color: '#333' }}>{acc.name}</span>
+                                                    <span style={{ fontWeight: 500, color: token.colorText }}>{acc.name}</span>
                                                 </div>
                                             }
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                 <Avatar src={acc.avatar} icon={<UserOutlined/>} />
-                                                <span style={{ fontWeight: 500 }}>{acc.name}</span>
+                                                <span style={{ fontWeight: 500, color: token.colorText }}>{acc.name}</span>
                                             </div>
                                         </Select.Option>
                                     ))}
@@ -351,9 +357,17 @@ const YoutubeTab = () => {
                             {(postType === 'video' || postType === 'shorts') && (
                                 <>
                                     <Form.Item label="Tải lên Video" required>
-                                        <Dragger fileList={fileList} beforeUpload={() => false} onChange={handleVideoChange} maxCount={1} accept="video/*" height={150}>
+                                        <Dragger 
+                                            fileList={fileList} 
+                                            beforeUpload={() => false} 
+                                            onChange={handleVideoChange} 
+                                            maxCount={1} 
+                                            accept="video/*" 
+                                            height={150}
+                                            style={{ background: token.colorFillAlter }} // Sửa: Nền upload động
+                                        >
                                             <p className="ant-upload-drag-icon"><InboxOutlined style={{color: '#ff0000'}} /></p>
-                                            <p className="ant-upload-text">Kéo thả Video vào đây</p>
+                                            <p className="ant-upload-text" style={{color: token.colorText}}>Kéo thả Video vào đây</p>
                                         </Dragger>
                                     </Form.Item>
 
@@ -418,6 +432,7 @@ const YoutubeTab = () => {
                     </Card>
                 </Col>
 
+                {/* CỘT PREVIEW */}
                 <Col xs={24} lg={10} xl={9}>
                     <div style={{ position: 'sticky', top: 24 }}>
                         <div style={{ marginBottom: 16, textAlign: 'center' }}><Tag color="red">XEM TRƯỚC (PREVIEW)</Tag></div>

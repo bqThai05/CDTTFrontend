@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Table, Card, Button, Avatar, Typography, Row, Col, Tag, Space, 
   Tooltip, Image, Breadcrumb, Spin, Empty, Modal, Form, Input, 
-  Select, message, Popconfirm, Tabs, Divider, Alert, List 
+  Select, message, Popconfirm, Tabs, Divider, Alert, List, theme 
 } from 'antd';
 import { 
   YoutubeFilled, 
@@ -90,7 +90,7 @@ const mockVideos = [
 const ChannelContent = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  
+  const { token } = theme.useToken();
   // 1. TRẠNG THÁI
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -741,16 +741,17 @@ const ChannelContent = () => {
             <Card
               hoverable
               onClick={() => setSelectedAccount(acc)} // Bấm vào thì lưu tài khoản lại
-              style={{ borderRadius: 12, textAlign: 'center', borderTop: `4px solid ${acc.platform === 'youtube' ? '#ff0000' : '#1877f2'}` }}
+              style={{ borderRadius: 12, textAlign: 'center', borderTop: `4px solid ${acc.platform === 'youtube' ? '#ff0000' : '#1877f2'}`, background: token.colorBgContainer  }}
+            
             >
                <Avatar 
                  src={acc.avatar} 
                  size={80} 
                  style={{ 
                    marginBottom: 16, 
-                   border: '2px solid #f0f0f0',
+                   border: '2px solid ${token.colorBorder}',
                    padding: 2,
-                   background: '#fff' 
+                    background: token.colorBgContainer
                  }}
                  icon={acc.platform === 'youtube' ? <YoutubeFilled style={{color: '#ff0000'}} /> : <FacebookFilled style={{color: '#1877f2'}} />}
                />
@@ -772,7 +773,7 @@ const ChannelContent = () => {
             <Card 
                 hoverable 
                 onClick={() => navigate('/accounts')}
-                style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, border: '1px dashed #d9d9d9', background: '#fafafa', minHeight: 200 }}
+                style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, border: '1px dashed ${token.colorBorder}', background: token.colorBgLayout, minHeight: 200 }}
             >
                 <div style={{ textAlign: 'center', color: '#999' }}>
                     <PlusOutlined style={{ fontSize: 32, marginBottom: 8 }} />
