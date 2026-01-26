@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Button, Avatar, Typography, Row, Col, message, Spin, Modal, 
-  Tooltip, Empty, Tag, Statistic, Tabs, Divider, Space, theme // 1. Thêm import theme
+  Tooltip, Empty, Tag, Statistic, Tabs, Divider, Space, theme 
 } from 'antd';
 import { 
   YoutubeFilled, 
@@ -27,11 +27,7 @@ const Accounts = () => {
   const [accounts, setAccounts] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // 2. Lấy token màu để xử lý Dark Mode
-  const { token } = theme.useToken();
-
-  // --- LOGIC XỬ LÝ DỮ LIỆU ---
+    const { token } = theme.useToken();
   const fetchAccounts = async () => {
     setLoading(true);
     try {
