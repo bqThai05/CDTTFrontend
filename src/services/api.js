@@ -182,6 +182,8 @@ const disconnectSocialAccount = (id) => api.delete(`/social/${id}`);
 const getYouTubeChannels = (socialAccountId) => api.get(`/youtube/channels/${socialAccountId}`, { silent: true });
 // Lấy video của kênh Youtube
 const getYouTubeChannelVideos = (channelId) => api.get(`/youtube/channels/${channelId}/videos`);
+// Làm mới video của kênh Youtube
+const refreshYouTubeVideos = (channelId) => api.post(`/youtube/channels/${channelId}/videos/refresh`);
 // Cập nhật video Youtube
 const updateYouTubeVideo = (videoId, data) => api.put(`/youtube/videos/${videoId}`, data);
 // Xóa video Youtube
@@ -291,6 +293,7 @@ export {
   // YouTube
   getYouTubeChannels,
   getYouTubeChannelVideos,
+  refreshYouTubeVideos,
   updateYouTubeVideo,
   deleteYouTubeVideo,
   getYouTubeVideoComments,

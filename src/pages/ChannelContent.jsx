@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Table, Card, Button, Avatar, Typography, Row, Col, Tag, Space, 
   Tooltip, Image, Breadcrumb, Spin, Empty, Modal, Form, Input, 
-  Select, message, Popconfirm, Tabs, Divider, Alert, List, theme 
+  Select, message, Popconfirm, Tabs, Divider, Alert, List, theme,
+  DatePicker
 } from 'antd';
 import { 
   YoutubeFilled, 
@@ -22,7 +23,10 @@ import {
   TagsOutlined,
   BarChartOutlined,
   SendOutlined,
-  UserOutlined
+  UserOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+  FilterOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,6 +35,7 @@ import {
   getAllSocialAccounts, 
   getYouTubeChannels, 
   getYouTubeChannelVideos,
+  refreshYouTubeVideos,
   updateYouTubeVideo,
   deleteYouTubeVideo,
   getYouTubeVideoComments,
@@ -114,6 +119,14 @@ const ChannelContent = () => {
   const [playlists, setPlaylists] = useState([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 1.1 TRẠNG THÁI BỘ LỌC
+  const [filters, setFilters] = useState({
+    searchText: '',
+    privacy: 'all',
+    dateRange: null
+  });
 
   // Trạng thái cho Tạo Playlist
   const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false);
@@ -142,6 +155,45 @@ const ChannelContent = () => {
   const [selectedVideoKeys, setSelectedVideoKeys] = useState([]);
   const [isBulkPlaylistModalOpen, setIsBulkPlaylistModalOpen] = useState(false);
   const [bulkProcessing, setBulkProcessing] = useState(false);
+
+  // Hàm làm mới video từ YouTube API của Backend
+  const handleRefreshVideos = async () => {
+    if (!selectedAccount || selectedAccount.platform !== 'youtube') return;
+    
+    setRefreshing(true);
+    const hide = message.loading('Đang đồng bộ dữ liệu mới từ YouTube...', 0);
+    
+    try {
+      const targetId = selectedAccount.channel_db_id || selectedAccount.social_channel_id || selectedAccount.social_id;
+      await refreshYouTubeVideos(targetId);
+      
+      message.success('Đồng bộ dữ liệu thành công!');
+      
+      // Sau khi refresh xong trên server, tải lại dữ liệu ở client
+      fetchYouTubeVideos(selectedAccount.channel_db_id, selectedAccount.social_channel_id || selectedAccount.social_id);
+      fetchYouTubePlaylists(selectedAccount.channel_db_id, selectedAccount.social_channel_id || selectedAccount.social_id, selectedAccount.id);
+      
+      // Làm mới luôn stats
+      if (selectedAccount.id) {
+        const res = await getYouTubeChannels(selectedAccount.id);
+        if (res.data && res.data.length > 0) {
+          const channel = res.data[0];
+          setSelectedAccount(prev => ({
+            ...prev,
+            subscriber_count: channel.subscriber_count || 0,
+            video_count: channel.video_count || 0,
+            view_count: channel.view_count || 0,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi refresh video:", error);
+      message.error('Không thể làm mới dữ liệu. Vui lòng thử lại sau.');
+    } finally {
+      setRefreshing(false);
+      hide();
+    }
+  };
 
   const fetchYouTubeVideos = useCallback(async (dbId, socialId) => {
     setLoadingVideos(true);
@@ -1002,6 +1054,39 @@ const ChannelContent = () => {
         }
     ];
 
+    // --- LOGIC LỌC DỮ LIỆU ---
+    const filteredVideos = videos.filter(video => {
+        const matchSearch = video.title.toLowerCase().includes(filters.searchText.toLowerCase()) || 
+                           video.description.toLowerCase().includes(filters.searchText.toLowerCase());
+        const matchPrivacy = filters.privacy === 'all' || video.privacy === filters.privacy;
+        
+        let matchDate = true;
+        if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
+            const videoDate = new Date(video.date);
+            const startDate = filters.dateRange[0].toDate();
+            const endDate = filters.dateRange[1].toDate();
+            matchDate = videoDate >= startDate && videoDate <= endDate;
+        }
+        
+        return matchSearch && matchPrivacy && matchDate;
+    });
+
+    const filteredPlaylists = playlists.filter(playlist => {
+        const matchSearch = playlist.title.toLowerCase().includes(filters.searchText.toLowerCase()) || 
+                           playlist.description.toLowerCase().includes(filters.searchText.toLowerCase());
+        const matchPrivacy = filters.privacy === 'all' || playlist.privacy === filters.privacy;
+        
+        let matchDate = true;
+        if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
+            const playlistDate = new Date(playlist.date);
+            const startDate = filters.dateRange[0].toDate();
+            const endDate = filters.dateRange[1].toDate();
+            matchDate = playlistDate >= startDate && playlistDate <= endDate;
+        }
+        
+        return matchSearch && matchPrivacy && matchDate;
+    });
+
     return (
         <div>
             {/* Thanh điều hướng quay lại */}
@@ -1010,13 +1095,24 @@ const ChannelContent = () => {
                     <Button icon={<ArrowLeftOutlined />} onClick={() => setSelectedAccount(null)}>Quay lại</Button>
                     <Breadcrumb items={[{ title: 'Danh sách kênh' }, { title: selectedAccount.name }]} />
                 </Space>
-                <Button 
-                    type="primary" 
-                    icon={<VideoCameraAddOutlined />}
-                    onClick={() => navigate('/create-post')}
-                >
-                    Tạo bài mới
-                </Button>
+                <Space>
+                    {selectedAccount.platform === 'youtube' && (
+                        <Button 
+                            icon={<ReloadOutlined />} 
+                            onClick={handleRefreshVideos}
+                            loading={refreshing}
+                        >
+                            Làm mới dữ liệu
+                        </Button>
+                    )}
+                    <Button 
+                        type="primary" 
+                        icon={<VideoCameraAddOutlined />}
+                        onClick={() => navigate('/create-post')}
+                    >
+                        Tạo bài mới
+                    </Button>
+                </Space>
             </div>
 
             {/* Thông tin kênh đang xem */}
@@ -1086,19 +1182,63 @@ const ChannelContent = () => {
 
             {/* Bảng dữ liệu với Tabs */}
             <Card variant="borderless" style={{ borderRadius: 12 }} styles={{ body: { padding: 0 } }}>
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0' }}>
+                    <Row gutter={[16, 16]} align="middle">
+                        <Col xs={24} md={8}>
+                            <Input
+                                placeholder="Tìm kiếm theo tiêu đề hoặc mô tả..."
+                                prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                                allowClear
+                                value={filters.searchText}
+                                onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
+                            />
+                        </Col>
+                        <Col xs={12} md={5}>
+                            <Select
+                                style={{ width: '100%' }}
+                                placeholder="Trạng thái hiển thị"
+                                value={filters.privacy}
+                                onChange={(val) => setFilters({ ...filters, privacy: val })}
+                                options={[
+                                    { value: 'all', label: 'Tất cả trạng thái' },
+                                    { value: 'public', label: 'Công khai' },
+                                    { value: 'private', label: 'Riêng tư' },
+                                    { value: 'unlisted', label: 'Không công khai' },
+                                ]}
+                            />
+                        </Col>
+                        <Col xs={12} md={7}>
+                            <DatePicker.RangePicker
+                                style={{ width: '100%' }}
+                                value={filters.dateRange}
+                                onChange={(val) => setFilters({ ...filters, dateRange: val })}
+                                placeholder={['Từ ngày', 'Đến ngày']}
+                            />
+                        </Col>
+                        <Col xs={24} md={4}>
+                            <Button 
+                                icon={<FilterOutlined />} 
+                                block
+                                onClick={() => setFilters({ searchText: '', privacy: 'all', dateRange: null })}
+                            >
+                                Xóa lọc
+                            </Button>
+                        </Col>
+                    </Row>
+                </div>
                 <Tabs 
                     defaultActiveKey="videos" 
                     style={{ padding: '0 24px' }}
                     items={[
                         {
                             key: 'videos',
-                            label: `Video (${videos.length})`,
+                            label: `Video (${filteredVideos.length})`,
                             children: (
                                 <Table 
                                     rowKey="real_id" 
                                     rowSelection={rowSelection}
                                     columns={columns} 
-                                    dataSource={videos} 
+                                    dataSource={filteredVideos} 
                                     loading={loadingVideos}
                                     pagination={{ pageSize: 5 }} 
                                     locale={{ emptyText: 'Không tìm thấy nội dung nào' }}
@@ -1108,7 +1248,7 @@ const ChannelContent = () => {
                         },
                         {
                             key: 'playlists',
-                            label: `Danh sách phát (${playlists.length})`,
+                            label: `Danh sách phát (${filteredPlaylists.length})`,
                             children: (
                                 <>
                                     <div style={{ marginBottom: 16, marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
@@ -1123,7 +1263,7 @@ const ChannelContent = () => {
                                     <Table 
                                         rowKey="id" 
                                         columns={playlistColumns} 
-                                        dataSource={playlists} 
+                                        dataSource={filteredPlaylists} 
                                         loading={loadingPlaylists}
                                         pagination={{ pageSize: 5 }} 
                                         locale={{ emptyText: 'Không tìm thấy danh sách phát nào' }}
