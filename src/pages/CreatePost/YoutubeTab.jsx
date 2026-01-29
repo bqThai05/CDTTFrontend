@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Form, Input, Select, Button, Upload, Row, Col, 
   message, Card, Typography, Divider, 
-  Segmented, Avatar, Tag, Space, Image, theme // 1. Thêm import theme
+  Segmented, Avatar, Tag, Space, Image, theme, Modal, Spin 
 } from 'antd';
 import { 
   InboxOutlined, YoutubeFilled, UploadOutlined, 
@@ -11,7 +11,7 @@ import {
   EyeInvisibleOutlined, VideoCameraFilled, 
   MobileFilled, MessageFilled, UserOutlined,
   LikeOutlined, CommentOutlined, MoreOutlined,
-  PictureFilled, PlayCircleFilled
+  PictureFilled, PlayCircleFilled, RobotOutlined, ThunderboltFilled
 } from '@ant-design/icons';
 import { getAllSocialAccounts, postToYouTube, createYouTubePost, getYouTubeChannels } from '../../services/api';
 
@@ -21,7 +21,6 @@ const { Dragger } = Upload;
 
 // --- 1. COMPONENT PREVIEW (ĐÃ SỬA DARK MODE) ---
 const YoutubePreview = ({ type, data, avatar }) => {
-    // 2. Lấy token màu để xử lý giao diện
     const { token } = theme.useToken();
 
     const safeTitle = data.title || "Tiêu đề video của bạn sẽ hiện ở đây";
@@ -29,13 +28,12 @@ const YoutubePreview = ({ type, data, avatar }) => {
     const safeDate = "Vừa xong";
     const channelName = data.channelName || "Tên Kênh";
     
-    // Style chung cho Card Preview
     const cardStyle = {
-        background: token.colorBgContainer, // Sửa: Màu nền động
+        background: token.colorBgContainer,
         borderRadius: 12,
         overflow: 'hidden',
-        boxShadow: token.boxShadowSecondary, // Sửa: Shadow động
-        border: `1px solid ${token.colorBorderSecondary}`, // Sửa: Viền động
+        boxShadow: token.boxShadowSecondary,
+        border: `1px solid ${token.colorBorderSecondary}`,
         maxWidth: 400,
         margin: '0 auto'
     };
@@ -68,7 +66,6 @@ const YoutubePreview = ({ type, data, avatar }) => {
                             <div style={{ fontSize: 12, color: token.colorTextSecondary }}>0 lượt xem • {safeDate}</div>
                         </div>
                     </div>
-                    {/* Sửa: Nền box mô tả */}
                     <div style={{ marginTop: 12, background: token.colorFillAlter, padding: 10, borderRadius: 8 }}>
                         <Text strong style={{fontSize: 12, color: token.colorText}}>Mô tả:</Text>
                         <Paragraph ellipsis={{ rows: 3, expandable: true, symbol: 'thêm' }} style={{ color: token.colorTextSecondary, marginTop: 4, fontSize: 13, marginBottom: 0, whiteSpace: 'pre-line' }}>
@@ -80,7 +77,7 @@ const YoutubePreview = ({ type, data, avatar }) => {
         );
     }
 
-    // --- VIEW 2: SHORTS (Giữ nền tối đặc trưng của Shorts) ---
+    // --- VIEW 2: SHORTS ---
     if (type === 'shorts') {
         return (
             <div style={{ ...cardStyle, maxWidth: 280, borderRadius: 24, background: '#222', color: '#fff', height: 500, position: 'relative', border: 'none' }}>
@@ -93,7 +90,6 @@ const YoutubePreview = ({ type, data, avatar }) => {
                     </div>
                 )}
                 
-                {/* Overlay thông tin */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', padding: 16, background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', borderRadius: '0 0 24px 24px' }}>
                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                         <Avatar src={avatar} size={32} style={{border: '1px solid #fff'}} />
@@ -147,7 +143,7 @@ const YoutubePreview = ({ type, data, avatar }) => {
 
 // --- COMPONENT CHÍNH ---
 const YoutubeTab = () => {
-    const { token } = theme.useToken(); // Lấy token cho Component chính
+    const { token } = theme.useToken();
     const [form] = Form.useForm();
     const [postType, setPostType] = useState('video');
     const [loading, setLoading] = useState(false);
@@ -163,6 +159,11 @@ const YoutubeTab = () => {
     const [fileList, setFileList] = useState([]);     
     const [thumbList, setThumbList] = useState([]);   
     const [postImgList, setPostImgList] = useState([]); 
+
+    // --- STATE CHO AI ---
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiTopic, setAiTopic] = useState('');
 
     const YOUTUBE_CATEGORIES = [
         { id: '22', name: 'Mọi người & Blog' },
@@ -261,6 +262,40 @@ const YoutubeTab = () => {
         return false;
     };
 
+    // --- HÀM XỬ LÝ AI ---
+    const handleAiGenerate = () => {
+        if (!aiTopic.trim()) {
+            message.warning("Vui lòng nhập chủ đề!");
+            return;
+        }
+        setAiLoading(true);
+
+        // Giả lập gọi API AI (Để demo chức năng "Tích hợp AI" ăn điểm)
+        setTimeout(() => {
+            const aiTitle = `Khám phá ${aiTopic} - Review chi tiết nhất 2026`;
+            const aiDesc = `🔥 Chào mừng các bạn đến với video về ${aiTopic}!\n\nTrong video này, chúng mình sẽ cùng nhau tìm hiểu sâu hơn về ${aiTopic} với những góc nhìn mới mẻ.\n\n📌 Nội dung chính:\n0:00 Giới thiệu\n01:30 Phân tích chi tiết\n05:45 Kết luận & Đánh giá\n\nĐừng quên Like & Subscribe để ủng hộ kênh nhé!\n\n#${aiTopic.replace(/\s/g, '')} #Review #Vlog #2026`;
+            const aiContent = `📣 Thông báo mới về ${aiTopic}!\n\nMọi người ơi, video mới về ${aiTopic} đã sẵn sàng rồi. Cả nhà vào xem và cho mình ý kiến nhé.\n\n👉 Link: [Đang cập nhật]\n\n#${aiTopic.replace(/\s/g, '')} #NewVideo`;
+
+            if (postType === 'video' || postType === 'shorts') {
+                form.setFieldsValue({
+                    title: aiTitle,
+                    description: aiDesc
+                });
+                setPreviewData(prev => ({ ...prev, title: aiTitle, description: aiDesc }));
+            } else {
+                form.setFieldsValue({
+                    content: aiContent
+                });
+                setPreviewData(prev => ({ ...prev, content: aiContent }));
+            }
+
+            setAiLoading(false);
+            setIsAiModalOpen(false);
+            setAiTopic('');
+            message.success("AI đã viết nội dung xong!");
+        }, 1500);
+    };
+
     const onFinish = async (values) => {
         setLoading(true);
         try {
@@ -308,7 +343,7 @@ const YoutubeTab = () => {
                     <Card style={{ 
                         borderRadius: 12, 
                         boxShadow: token.boxShadowTertiary,
-                        background: token.colorBgContainer // Sửa: Màu nền động
+                        background: token.colorBgContainer 
                     }}>
                         <div style={{ marginBottom: 24, textAlign: 'center' }}>
                             <Segmented
@@ -364,12 +399,24 @@ const YoutubeTab = () => {
                                             maxCount={1} 
                                             accept="video/*" 
                                             height={150}
-                                            style={{ background: token.colorFillAlter }} // Sửa: Nền upload động
+                                            style={{ background: token.colorFillAlter }}
                                         >
                                             <p className="ant-upload-drag-icon"><InboxOutlined style={{color: '#ff0000'}} /></p>
                                             <p className="ant-upload-text" style={{color: token.colorText}}>Kéo thả Video vào đây</p>
                                         </Dragger>
                                     </Form.Item>
+
+                                    {/* Nút gọi AI */}
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                                        <Button 
+                                            type="dashed" 
+                                            icon={<RobotOutlined style={{color: '#722ed1'}}/>} 
+                                            onClick={() => setIsAiModalOpen(true)}
+                                            style={{ color: '#722ed1', borderColor: '#722ed1' }}
+                                        >
+                                            Viết tiêu đề & mô tả bằng AI
+                                        </Button>
+                                    </div>
 
                                     <Form.Item name="title" label="Tiêu đề" rules={[{ required: true, max: 100 }]}>
                                         <Input placeholder="Tiêu đề video..." showCount maxLength={100} size="large" />
@@ -413,6 +460,18 @@ const YoutubeTab = () => {
 
                             {postType === 'post' && (
                                 <>
+                                    {/* Nút gọi AI cho bài Post */}
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                                        <Button 
+                                            type="dashed" 
+                                            icon={<ThunderboltFilled style={{color: '#faad14'}}/>} 
+                                            onClick={() => setIsAiModalOpen(true)}
+                                            style={{ color: '#faad14', borderColor: '#faad14' }}
+                                        >
+                                            Viết nội dung bằng AI
+                                        </Button>
+                                    </div>
+
                                     <Form.Item name="content" label="Nội dung bài viết" rules={[{ required: true }]}>
                                         <TextArea rows={5} placeholder="Bạn đang nghĩ gì?..." showCount maxLength={2000} style={{ fontSize: 16 }} />
                                     </Form.Item>
@@ -440,6 +499,41 @@ const YoutubeTab = () => {
                     </div>
                 </Col>
             </Row>
+
+            {/* MODAL AI */}
+            <Modal 
+                title={
+                    <div style={{display:'flex', alignItems:'center', gap: 8}}>
+                        <RobotOutlined style={{color: '#1890ff', fontSize: 20}} />
+                        <span>Trợ lý AI Viết Nội Dung</span>
+                    </div>
+                } 
+                open={isAiModalOpen} 
+                onCancel={() => setIsAiModalOpen(false)} 
+                footer={null} 
+                centered
+            >
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <p style={{marginBottom: 10, fontSize: 16}}>Bạn muốn làm video về chủ đề gì?</p>
+                    <Input 
+                        placeholder="Ví dụ: Đánh giá iPhone 15, Hướng dẫn nấu phở bò..." 
+                        value={aiTopic} 
+                        onChange={(e) => setAiTopic(e.target.value)} 
+                        onPressEnter={handleAiGenerate}
+                        size="large"
+                    />
+                    <Button 
+                        type="primary" 
+                        style={{ marginTop: 20, height: 40, padding: '0 30px', background: 'linear-gradient(90deg, #1890ff, #722ed1)' }} 
+                        onClick={handleAiGenerate} 
+                        loading={aiLoading}
+                        icon={<RobotOutlined />}
+                    >
+                        Tạo nội dung ngay
+                    </Button>
+                    {aiLoading && <div style={{marginTop: 15, color: '#888'}}>Đang suy nghĩ ý tưởng triệu view...</div>}
+                </div>
+            </Modal>
         </div>
     );
 };

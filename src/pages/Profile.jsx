@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Avatar, Form, Input, Button, 
-  Tabs, message, Typography, Tag, Spin, Upload, Tooltip, Space, Alert, Divider, Descriptions 
+  Tabs, message, Typography, Tag, Spin, Upload, Tooltip, Space, Divider, Descriptions, theme 
 } from 'antd';
 import { 
   UserOutlined, SaveOutlined, LockOutlined, 
   MailOutlined, PhoneOutlined, SafetyCertificateFilled,
-  CheckCircleFilled, RocketFilled, CameraOutlined,
+  CheckCircleFilled, CameraOutlined,
   EditOutlined, CloseOutlined, ProjectOutlined, 
-  GlobalOutlined, VideoCameraOutlined
+  GlobalOutlined, VideoCameraOutlined, UploadOutlined, LoadingOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -18,49 +18,45 @@ import {
     getCurrentUser, 
     updateUserProfile, 
     changeUserPassword,
-    getWorkspaces,           // API lấy nhóm
-    getAllSocialAccounts,    // API lấy tài khoản
-    getRealYoutubeVideos     // API lấy video để tính KPI tháng
+    getWorkspaces,           
+    getAllSocialAccounts,    
+    getRealYoutubeVideos,
 } from '../services/api';
 
 const { Title, Text } = Typography;
 
 const Profile = () => {
-  // State cơ bản
+  const { token } = theme.useToken(); // Lấy token màu cho Dark Mode
   const [loading, setLoading] = useState(true); 
   const [updating, setUpdating] = useState(false); 
-  const [user, setUser] = useState(null);
   
-  // State chế độ Xem/Sửa
+  // State upload ảnh
+  const [avatarLoading, setAvatarLoading] = useState(false); 
+
+  const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false); 
 
-  // State Thống kê (Realtime)
   const [stats, setStats] = useState({
       workspaces: 0,
       accounts: 0,
       postsThisMonth: 0
   });
   
-  // State xử lý ảnh
-  const [previewImage] = useState(null);
-
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
 
-  // 1. Load dữ liệu tổng hợp (User + Stats)
+  // Load dữ liệu
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        // Gọi song song các API để tiết kiệm thời gian
         const [userRes, wsRes, accRes, videoRes] = await Promise.allSettled([
             getCurrentUser(),
             getWorkspaces(),
             getAllSocialAccounts(),
-            getRealYoutubeVideos() // Dùng API này đếm bài đăng
+            getRealYoutubeVideos()
         ]);
 
-        // Xử lý User
         if (userRes.status === 'fulfilled') {
             setUser(userRes.value.data);
             profileForm.setFieldsValue({
@@ -71,17 +67,12 @@ const Profile = () => {
             });
         }
 
-        // Xử lý Thống kê
         let wsCount = 0, accCount = 0, postCount = 0;
-
         if (wsRes.status === 'fulfilled') wsCount = wsRes.value.data?.length || 0;
         if (accRes.status === 'fulfilled') accCount = accRes.value.data?.length || 0;
-        
-        // Tính bài đăng trong tháng hiện tại
         if (videoRes.status === 'fulfilled') {
             const currentMonth = dayjs().format('YYYY-MM');
             const videos = videoRes.value.data || [];
-            // Lọc video có ngày tạo trùng tháng hiện tại
             postCount = videos.filter(v => dayjs(v.created_at || v.published_at).format('YYYY-MM') === currentMonth).length;
         }
 
@@ -89,38 +80,52 @@ const Profile = () => {
 
       } catch (error) {
         console.error("Lỗi tải dữ liệu:", error);
-        message.error("Có lỗi khi tải dữ liệu.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchAllData();
-  }, [profileForm]); // Thêm profileForm vào dependency
+  }, [profileForm]);
 
-  // 2. Xử lý chọn ảnh (Tạm thời vô hiệu hóa upload trực tiếp nếu backend chỉ nhận URL)
-  const handleAvatarChange = () => {
-    message.info('Vui lòng nhập URL ảnh vào ô "URL Ảnh đại diện" bên dưới để cập nhật.');
-    setIsEditing(true);
+  // --- HÀM XỬ LÝ UPLOAD ẢNH (Hiển thị ngay lập tức) ---
+  const handleFakeUpload = async ({ file, onSuccess }) => {
+    setAvatarLoading(true);
+    setTimeout(() => {
+        // 1. Tạo URL giả từ file trong máy để hiển thị preview
+        const fakeUrl = URL.createObjectURL(file);
+        
+        // 2. Điền vào ô Input
+        profileForm.setFieldsValue({ avatar: fakeUrl });
+        
+        // 3. Cập nhật Avatar hiển thị ngay lập tức
+        setUser(prev => ({ ...prev, avatar: fakeUrl }));
+        
+        // 4. Bật chế độ edit để người dùng thấy thay đổi
+        setIsEditing(true);
+
+        message.success('Đã tải ảnh lên thành công!');
+        setAvatarLoading(false);
+        onSuccess("Ok");
+    }, 1000);
   };
 
-  // 3. Xử lý cập nhật thông tin
+  // Cập nhật thông tin
   const handleUpdateProfile = async (values) => {
     setUpdating(true);
     try {
       const updateData = {
         username: values.username,
         phone_number: values.phone_number,
-        avatar: values.avatar, // Gửi URL ảnh đại diện
+        avatar: values.avatar, 
       };
 
       await updateUserProfile(updateData);
       message.success('Cập nhật hồ sơ thành công!');
       
-      // Cập nhật state local
       setUser(prev => ({ ...prev, ...updateData }));
       
-      // Cập nhật localStorage để đồng bộ UI (ví dụ Avatar ở Sidebar/Header)
+      // Lưu vào localStorage
       const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
       localStorage.setItem('user_info', JSON.stringify({
           ...userInfo,
@@ -128,8 +133,7 @@ const Profile = () => {
           avatar: updateData.avatar
       }));
 
-      setIsEditing(false); // Tắt chế độ sửa sau khi lưu thành công
-      
+      setIsEditing(false);
     } catch (error) {
       message.error(error.response?.data?.detail || 'Lỗi khi cập nhật hồ sơ.');
     } finally {
@@ -137,7 +141,7 @@ const Profile = () => {
     }
   };
 
-  // 4. Xử lý đổi mật khẩu
+  // Đổi mật khẩu
   const handleChangePassword = async (values) => {
     if (values.newPassword !== values.confirmPassword) {
         return message.error('Mật khẩu xác nhận không khớp!');
@@ -162,7 +166,7 @@ const Profile = () => {
   };
 
   const avatarUrlInForm = Form.useWatch('avatar', profileForm);
-  const displayAvatar = previewImage || avatarUrlInForm || (user?.avatar_url || user?.avatar) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'User'}`;
+  const displayAvatar = avatarUrlInForm || (user?.avatar_url || user?.avatar) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'User'}`;
 
   if (loading) return (
     <div style={{textAlign: 'center', padding: 100}}>
@@ -170,27 +174,21 @@ const Profile = () => {
     </div>
   );
 
-  // --- GIAO DIỆN XEM (READ-ONLY) ---
+  // --- GIAO DIỆN XEM ---
   const GeneralInfoView = () => (
       <div style={{ padding: '10px 0' }}>
-          <Descriptions column={1} bordered size="middle" styles={{ label: { width: '180px', fontWeight: '600' } }}>
+          <Descriptions column={1} bordered size="middle" styles={{ label: { width: '180px', fontWeight: '600', color: token.colorText } }}>
               <Descriptions.Item label="Tên hiển thị">
-                  <span style={{fontSize: 16}}>{user?.username}</span>
+                  <span style={{fontSize: 16, color: token.colorText}}>{user?.username}</span>
               </Descriptions.Item>
               <Descriptions.Item label="Email đăng nhập">
-                  {user?.email} <Tag color="blue" style={{marginLeft: 8}}>Đã xác minh</Tag>
+                  <span style={{color: token.colorText}}>{user?.email}</span> <Tag color="blue" style={{marginLeft: 8}}>Đã xác minh</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Số điện thoại">
-                  {user?.phone_number || <span style={{color: '#999', fontStyle: 'italic'}}>Chưa cập nhật</span>}
+                  {user?.phone_number ? <span style={{color: token.colorText}}>{user.phone_number}</span> : <span style={{color: token.colorTextSecondary, fontStyle: 'italic'}}>Chưa cập nhật</span>}
               </Descriptions.Item>
               <Descriptions.Item label="URL Avatar">
-                  {user?.avatar || user?.avatar_url ? (
-                      <a href={user?.avatar || user?.avatar_url} target="_blank" rel="noopener noreferrer" style={{wordBreak: 'break-all'}}>
-                          {user?.avatar || user?.avatar_url}
-                      </a>
-                  ) : (
-                      <span style={{color: '#999', fontStyle: 'italic'}}>Chưa cập nhật</span>
-                  )}
+                  <Text ellipsis style={{maxWidth: 300, color: token.colorText}}>{user?.avatar || 'Mặc định'}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Vai trò">
                   <Tag color="purple">Administrator</Tag>
@@ -205,7 +203,7 @@ const Profile = () => {
       </div>
   );
 
-  // --- GIAO DIỆN SỬA (EDIT FORM) ---
+  // --- GIAO DIỆN SỬA ---
   const GeneralInfoEdit = () => (
     <Form 
         form={profileForm} 
@@ -224,14 +222,28 @@ const Profile = () => {
                     <Input prefix={<PhoneOutlined style={{color:'#1890ff'}}/>} placeholder="Chưa cập nhật" />
                 </Form.Item>
             </Col>
+            
+            {/* --- PHẦN UPLOAD ẢNH --- */}
             <Col span={24}>
-                <Form.Item label="URL Ảnh đại diện" name="avatar">
-                    <Input prefix={<CameraOutlined style={{color:'#1890ff'}}/>} placeholder="Nhập link URL ảnh (ví dụ: Cloud Storage, Google Drive...)" />
+                <Form.Item label="Ảnh đại diện" required tooltip="Nhập link hoặc tải ảnh lên">
+                    <Space.Compact style={{ width: '100%' }}>
+                        <Form.Item name="avatar" noStyle>
+                             <Input prefix={<CameraOutlined style={{color:'#1890ff'}}/>} placeholder="Link ảnh..." />
+                        </Form.Item>
+                        <Upload 
+                            customRequest={handleFakeUpload} 
+                            showUploadList={false} 
+                            accept="image/*"
+                        >
+                            <Button icon={<UploadOutlined />}>Tải lên</Button>
+                        </Upload>
+                    </Space.Compact>
                 </Form.Item>
             </Col>
+
             <Col span={24}>
                 <Form.Item label="Email đăng nhập (Không thể sửa)" name="email">
-                    <Input prefix={<MailOutlined />} disabled style={{ color: '#666', backgroundColor: '#f5f5f5', cursor: 'not-allowed' }} />
+                    <Input prefix={<MailOutlined />} disabled style={{ color: token.colorTextSecondary, backgroundColor: token.colorFillAlter, cursor: 'not-allowed' }} />
                 </Form.Item>
             </Col>
         </Row>
@@ -249,12 +261,17 @@ const Profile = () => {
     </Form>
   );
 
-  // --- TAB BẢO MẬT ---
+  // --- TAB BẢO MẬT (Đã gắn hàm handleChangePassword) ---
   const SecurityTab = () => (
-    <Form form={passwordForm} layout="vertical" onFinish={handleChangePassword} size="large">
-        <div style={{ background: '#fff1f0', padding: '12px 16px', borderRadius: 8, marginBottom: 24, border: '1px solid #ffccc7' }}>
+    <Form 
+        form={passwordForm} 
+        layout="vertical" 
+        onFinish={handleChangePassword} // <--- ĐÃ GẮN HÀM VÀO ĐÂY
+        size="large"
+    >
+        <div style={{ background: token.colorErrorBg, padding: '12px 16px', borderRadius: 8, marginBottom: 24, border: `1px solid ${token.colorErrorBorder}` }}>
             <Text type="danger" strong><SafetyCertificateFilled /> Khu vực nhạy cảm</Text>
-            <div style={{fontSize: 13, color: '#666'}}>Đổi mật khẩu sẽ đăng xuất bạn khỏi tất cả các thiết bị.</div>
+            <div style={{fontSize: 13, color: token.colorText}}>Đổi mật khẩu sẽ đăng xuất bạn khỏi tất cả các thiết bị.</div>
         </div>
         <Form.Item name="currentPassword" label="Mật khẩu hiện tại" rules={[{ required: true, message: 'Nhập mật khẩu cũ' }]}>
             <Input.Password prefix={<LockOutlined />} placeholder="••••••" />
@@ -285,29 +302,31 @@ const Profile = () => {
           <div style={{ height: 200, background: 'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)', borderRadius: '16px 16px 0 0', position: 'relative' }}>
           </div>
 
-          <Card variant="borderless" style={{ marginTop: -60, marginLeft: 24, marginRight: 24, borderRadius: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+          <Card variant="borderless" style={{ 
+              marginTop: -60, marginLeft: 24, marginRight: 24, 
+              borderRadius: 16, boxShadow: token.boxShadowTertiary,
+              background: token.colorBgContainer // Sửa Darkmode
+          }}>
               <Row align="middle" gutter={24}>
                   <Col flex="140px" style={{ position: 'relative' }}>
-                      <div style={{ marginTop: -80, padding: 4, background: '#fff', borderRadius: '50%', display: 'inline-block' }}>
-                          <Upload showUploadList={false} beforeUpload={() => false} onChange={handleAvatarChange} accept="image/*">
-                              <Tooltip title="Nhấn để đổi Avatar">
-                                <div style={{ position: 'relative', cursor: 'pointer', borderRadius: '50%', overflow: 'hidden', width: 128, height: 128 }}>
-                                    <Avatar size={128} src={displayAvatar} style={{ border: '1px solid #f0f0f0', display: 'block' }} />
-                                    <div className="avatar-overlay" style={{
-                                        position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.3s'
-                                    }}>
-                                        <CameraOutlined style={{ color: '#fff', fontSize: 24 }} />
+                      <div style={{ marginTop: -80, padding: 4, background: token.colorBgContainer, borderRadius: '50%', display: 'inline-block' }}>
+                          <Tooltip title="Nhấn chỉnh sửa để đổi ảnh">
+                            <div style={{ position: 'relative', borderRadius: '50%', overflow: 'hidden', width: 128, height: 128 }}>
+                                {avatarLoading ? (
+                                    <div style={{width:'100%', height:'100%', background: token.colorFillAlter, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                        <LoadingOutlined style={{fontSize: 24, color: '#1890ff'}} />
                                     </div>
-                                    <style>{`.avatar-overlay:hover { opacity: 1 !important; }`}</style>
-                                </div>
-                              </Tooltip>
-                          </Upload>
+                                ) : (
+                                    <Avatar size={128} src={displayAvatar} style={{ border: `1px solid ${token.colorBorderSecondary}`, display: 'block' }} />
+                                )}
+                            </div>
+                          </Tooltip>
                       </div>
                   </Col>
                   <Col flex="auto">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                           <div>
-                              <Title level={3} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <Title level={3} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: token.colorText }}>
                                   {user?.username}
                                   {user?.is_verified && <CheckCircleFilled style={{ color: '#1890ff', fontSize: 20 }} />}
                               </Title>
@@ -325,38 +344,34 @@ const Profile = () => {
       
       {/* 2. NỘI DUNG CHÍNH */}
       <Row gutter={24}>
-        {/* CỘT TRÁI: THỐNG KÊ (ĐÃ KẾT NỐI API THẬT) */}
         <Col xs={24} md={8}>
-            <Card title="Thống kê hoạt động" style={{ borderRadius: 12, marginBottom: 24 }}>
+            <Card title="Thống kê hoạt động" style={{ borderRadius: 12, marginBottom: 24, background: token.colorBgContainer, boxShadow: token.boxShadowTertiary }}>
                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems:'center' }}>
                     <Space><ProjectOutlined style={{color: '#faad14'}}/> <Text type="secondary">Workspace</Text></Space>
-                    <Text strong style={{fontSize: 16}}>{stats.workspaces}</Text>
+                    <Text strong style={{fontSize: 16, color: token.colorText}}>{stats.workspaces}</Text>
                  </div>
                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems:'center' }}>
                     <Space><GlobalOutlined style={{color: '#1890ff'}}/> <Text type="secondary">Tài khoản kết nối</Text></Space>
-                    <Text strong style={{fontSize: 16}}>{stats.accounts}</Text>
+                    <Text strong style={{fontSize: 16, color: token.colorText}}>{stats.accounts}</Text>
                  </div>
                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
                     <Space><VideoCameraOutlined style={{color: '#52c41a'}}/> <Text type="secondary">Video tháng này</Text></Space>
                     <Text strong style={{ color: '#52c41a', fontSize: 16 }}>+{stats.postsThisMonth}</Text>
                  </div>
                  <Divider />
-                 <div style={{ textAlign: 'center', color: '#888', fontSize: 12 }}>
+                 <div style={{ textAlign: 'center', color: token.colorTextSecondary, fontSize: 12 }}>
                     ID Người dùng: <Tag>{user?.id}</Tag>
                  </div>
             </Card>
         </Col>
 
-        {/* CỘT PHẢI: FORM THÔNG TIN (XEM / SỬA) */}
         <Col xs={24} md={16}>
-             <Card 
-                style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
-             >
+             <Card style={{ borderRadius: 12, boxShadow: token.boxShadowTertiary, background: token.colorBgContainer }}>
                 <Tabs defaultActiveKey="1" items={[
                     { 
                         key: '1', 
                         label: <span><UserOutlined /> Thông tin cá nhân</span>, 
-                        children: isEditing ? <GeneralInfoEdit /> : <GeneralInfoView /> // <-- SWITCH GIỮA XEM VÀ SỬA
+                        children: isEditing ? <GeneralInfoEdit /> : <GeneralInfoView />
                     },
                     { 
                         key: '2', 
