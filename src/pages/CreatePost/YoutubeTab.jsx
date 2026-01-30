@@ -13,7 +13,15 @@ import {
   LikeOutlined, CommentOutlined, MoreOutlined,
   PictureFilled, PlayCircleFilled, RobotOutlined, ThunderboltFilled
 } from '@ant-design/icons';
-import { getAllSocialAccounts, postToYouTube, createYouTubePost, getYouTubeChannels } from '../../services/api';
+import { 
+  getAllSocialAccounts, 
+  postToYouTube, 
+  createYouTubePost, 
+  getYouTubeChannels, 
+  generateAIContent,
+  suggestAIPost,
+  generateAICaption 
+} from '../../services/api';
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -263,37 +271,113 @@ const YoutubeTab = () => {
     };
 
     // --- HÀM XỬ LÝ AI ---
-    const handleAiGenerate = () => {
+    const handleAiGenerate = async () => {
         if (!aiTopic.trim()) {
             message.warning("Vui lòng nhập chủ đề!");
             return;
         }
         setAiLoading(true);
 
-        // Giả lập gọi API AI (Để demo chức năng "Tích hợp AI" ăn điểm)
-        setTimeout(() => {
-            const aiTitle = `Khám phá ${aiTopic} - Review chi tiết nhất 2026`;
-            const aiDesc = `🔥 Chào mừng các bạn đến với video về ${aiTopic}!\n\nTrong video này, chúng mình sẽ cùng nhau tìm hiểu sâu hơn về ${aiTopic} với những góc nhìn mới mẻ.\n\n📌 Nội dung chính:\n0:00 Giới thiệu\n01:30 Phân tích chi tiết\n05:45 Kết luận & Đánh giá\n\nĐừng quên Like & Subscribe để ủng hộ kênh nhé!\n\n#${aiTopic.replace(/\s/g, '')} #Review #Vlog #2026`;
-            const aiContent = `📣 Thông báo mới về ${aiTopic}!\n\nMọi người ơi, video mới về ${aiTopic} đã sẵn sàng rồi. Cả nhà vào xem và cho mình ý kiến nhé.\n\n👉 Link: [Đang cập nhật]\n\n#${aiTopic.replace(/\s/g, '')} #NewVideo`;
+        try {
+            let aiContent = "";
+            let aiTitle = "";
+            let aiDesc = "";
 
             if (postType === 'video' || postType === 'shorts') {
+                // Sử dụng tính năng Gợi ý bài đăng (Suggest Post) cho video
+                const res = await suggestAIPost(aiTopic, 'youtube');
+                const data = res.data;
+                
+                // Phân tách tiêu đề và mô tả linh hoạt hơn
+                if (data.title && data.content) {
+                    aiTitle = data.title;
+                    aiDesc = data.content;
+                } else {
+                    // Xử lý nếu data là string hoặc object lồng nhau
+                    const text = data.content || data.suggestion || (typeof data === 'string' ? data : JSON.stringify(data));
+                    const lines = text.split('\n').filter(l => l.trim() !== '');
+                    
+                    // Thử tìm dòng bắt đầu bằng Title: hoặc tiêu đề đầu tiên
+                    const titleIdx = lines.findIndex(l => l.toLowerCase().startsWith('title:') || l.toLowerCase().startsWith('tiêu đề:'));
+                    if (titleIdx !== -1) {
+                        aiTitle = lines[titleIdx].replace(/title:|tiêu đề:/i, '').replace(/\*\*/g, '').trim();
+                        aiDesc = lines.slice(titleIdx + 1).join('\n').trim();
+                    } else {
+                        aiTitle = lines[0]?.replace(/\*\*/g, '').trim() || `Video về ${aiTopic}`;
+                        aiDesc = lines.slice(1).join('\n').trim();
+                    }
+                }
+
                 form.setFieldsValue({
                     title: aiTitle,
                     description: aiDesc
                 });
                 setPreviewData(prev => ({ ...prev, title: aiTitle, description: aiDesc }));
             } else {
+                // Sử dụng tính năng Tạo nội dung (Generate Content) cho bài đăng cộng đồng
+                const res = await generateAIContent(`Viết một bài đăng cộng đồng YouTube ngắn gọn về: ${aiTopic}`);
+                const data = res.data;
+                aiContent = data.content || data.suggestion || (typeof data === 'string' ? data : JSON.stringify(data));
+
                 form.setFieldsValue({
                     content: aiContent
                 });
                 setPreviewData(prev => ({ ...prev, content: aiContent }));
             }
 
-            setAiLoading(false);
             setIsAiModalOpen(false);
             setAiTopic('');
-            message.success("AI đã viết nội dung xong!");
-        }, 1500);
+            message.success("AI đã tạo nội dung thành công!");
+        } catch (error) {
+            console.error("AI Generation Error:", error);
+            let errorMsg = error.response?.data?.detail;
+            if (Array.isArray(errorMsg)) {
+                errorMsg = errorMsg.map(err => `${err.loc.join('.')}: ${err.msg}`).join('; ');
+            } else if (typeof errorMsg === 'object') {
+                errorMsg = JSON.stringify(errorMsg);
+            }
+            errorMsg = errorMsg || error.response?.data?.message || error.message || "Không thể kết nối với AI";
+            message.error(`Lỗi AI: ${errorMsg}`);
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    // Hàm tạo Caption nhanh từ nội dung hiện tại
+    const handleGenerateCaption = async () => {
+        const currentContent = form.getFieldValue('description') || form.getFieldValue('content');
+        if (!currentContent) {
+            message.warning("Vui lòng nhập nội dung trước khi tạo caption!");
+            return;
+        }
+
+        setAiLoading(true);
+        try {
+            const res = await generateAICaption(currentContent);
+            const data = res.data;
+            const caption = data.caption || data.content || data.suggestion || (typeof data === 'string' ? data : JSON.stringify(data));
+            
+            if (postType === 'post') {
+                form.setFieldsValue({ content: caption });
+                setPreviewData(prev => ({ ...prev, content: caption }));
+            } else {
+                form.setFieldsValue({ description: caption });
+                setPreviewData(prev => ({ ...prev, description: caption }));
+            }
+            message.success("Đã tạo caption mới!");
+        } catch (error) {
+            console.error("AI Caption Error:", error);
+            let errorMsg = error.response?.data?.detail;
+            if (Array.isArray(errorMsg)) {
+                errorMsg = errorMsg.map(err => `${err.loc.join('.')}: ${err.msg}`).join('; ');
+            } else if (typeof errorMsg === 'object') {
+                errorMsg = JSON.stringify(errorMsg);
+            }
+            errorMsg = errorMsg || error.response?.data?.message || error.message || "Lỗi khi tạo caption";
+            message.error(`Lỗi AI: ${errorMsg}`);
+        } finally {
+            setAiLoading(false);
+        }
     };
 
     const onFinish = async (values) => {
@@ -425,6 +509,17 @@ const YoutubeTab = () => {
                                     <Form.Item name="description" label="Mô tả">
                                         <TextArea rows={4} placeholder="Mô tả nội dung..." showCount maxLength={5000} />
                                     </Form.Item>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -15, marginBottom: 15 }}>
+                                        <Button 
+                                            size="small" 
+                                            type="link" 
+                                            icon={<ThunderboltFilled />} 
+                                            onClick={handleGenerateCaption}
+                                            loading={aiLoading}
+                                        >
+                                            Rút gọn & tạo Caption hấp dẫn bằng AI
+                                        </Button>
+                                    </div>
 
                                     {postType === 'video' && (
                                         <Row gutter={16}>
@@ -475,6 +570,17 @@ const YoutubeTab = () => {
                                     <Form.Item name="content" label="Nội dung bài viết" rules={[{ required: true }]}>
                                         <TextArea rows={5} placeholder="Bạn đang nghĩ gì?..." showCount maxLength={2000} style={{ fontSize: 16 }} />
                                     </Form.Item>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -15, marginBottom: 15 }}>
+                                        <Button 
+                                            size="small" 
+                                            type="link" 
+                                            icon={<ThunderboltFilled />} 
+                                            onClick={handleGenerateCaption}
+                                            loading={aiLoading}
+                                        >
+                                            Rút gọn & tạo Caption hấp dẫn bằng AI
+                                        </Button>
+                                    </div>
                                     <Form.Item label="Hình ảnh đính kèm (Tùy chọn)">
                                         <Upload listType="picture" fileList={postImgList} beforeUpload={() => false} onChange={handlePostImgChange} maxCount={1} accept="image/*">
                                             <Button icon={<PictureFilled />}>Chọn ảnh</Button>

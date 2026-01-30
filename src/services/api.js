@@ -28,6 +28,11 @@ export const createYouTubePost = (data) => {
 };
 
 
+// AI Endpoints
+const generateAIContent = (prompt) => api.post('/ai/generate', { prompt });
+const suggestAIPost = (topic, platform) => api.post('/ai/suggest-post', { topic, platform });
+const generateAICaption = (content) => api.post('/ai/generate-caption', { content });
+
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -310,7 +315,12 @@ export {
   // Facebook
   getFacebookPages,
   getFacebookPagePosts,
-  getFacebookPageAnalytics
+  getFacebookPageAnalytics,
+
+  // AI
+  generateAIContent,
+  suggestAIPost,
+  generateAICaption
 };
 
 export default api;
